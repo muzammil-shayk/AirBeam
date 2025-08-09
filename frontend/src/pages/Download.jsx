@@ -25,7 +25,8 @@ const Download = ({ initialDownloadKey }) => {
 
     // Using window.open() to trigger the download in a new tab, which is
     // a better user experience than navigating the current page away.
-    const downloadUrl = `http://localhost:5001/api/download/${keyInput}`;
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+    const downloadUrl = `${API_URL}/api/download/${keyInput}`;
     window.open(downloadUrl, "_blank");
 
     // The download starts in a new tab, so we can't reliably track it.
