@@ -1,27 +1,59 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import {
+  UploadCloud,
+  X,
+  Copy,
+  Image as ImageIcon,
+  FileText,
+} from "lucide-react"; // Using lucide-react for a modern icon set
 
-// 🚨 The component now receives state and setters as props from App.jsx
-const Upload = ({
-  file,
-  setFile,
-  uploading,
-  setUploading,
-  message,
-  setMessage,
-  downloadKey,
-  setDownloadKey,
-}) => {
-  // We still use local state for the preview URL, as it's a temporary, visual detail.
+const Upload = () => {
+  // State for file management
+  const [file, setFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [downloadKey, setDownloadKey] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    setFile(selectedFile);
+  // A mock backend endpoint for demonstration purposes.
+  // Replace this with your actual backend URL.
+  const API_URL = "http://localhost:5001/api/upload";
+
+  // New function to reset the component state to its initial values
+  const resetState = () => {
+    setFile(null);
+    setPreviewUrl(null);
     setMessage("");
     setDownloadKey(null);
   };
 
+  // Handle file selection from the input
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0];
+    if (selectedFile) {
+      setFile(selectedFile);
+      setMessage(""); // Clear any previous messages
+      setDownloadKey(null); // Clear any old download keys
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile) {
+      setFile(droppedFile);
+      setMessage("");
+      setDownloadKey(null);
+    }
+  };
+
+  // Create an object URL for image previews
   useEffect(() => {
     if (!file) {
       setPreviewUrl(null);
@@ -37,17 +69,12 @@ const Upload = ({
     }
   }, [file]);
 
+  // Remove the selected file by resetting the state
   const handleRemoveFile = () => {
-    setFile(null);
-    setPreviewUrl(null);
-    setDownloadKey(null);
+    resetState();
   };
 
-  async function uploadFile(formData) {
-    const res = await axios.post("http://localhost:5001/api/upload", formData);
-    return res;
-  }
-
+  // Handle the file upload process
   const handleUpload = async () => {
     if (!file) {
       setMessage("Please select a file first.");
@@ -61,13 +88,14 @@ const Upload = ({
       setUploading(true);
       setMessage("");
 
-      const res = await uploadFile(formData);
+      // Simulate API call to the backend
+      const res = await axios.post(API_URL, formData);
 
       if (res.status === 200) {
-        setDownloadKey(res.data.downloadKey);
-        setMessage("File uploaded successfully! Share the key below.");
-        setFile(null);
-        setPreviewUrl(null);
+        const { downloadKey } = res.data;
+        setDownloadKey(downloadKey);
+        setMessage("File uploaded successfully! Share this key to download.");
+        setFile(null); // Clear the file after successful upload
       }
     } catch (err) {
       console.error("Upload failed:", err);
@@ -77,9 +105,8 @@ const Upload = ({
     }
   };
 
+  // Copy the download key to the clipboard
   const handleCopyToClipboard = () => {
-    // 🚨 We use document.execCommand instead of navigator.clipboard.writeText
-    // due to potential iframe restrictions in some environments.
     const tempInput = document.createElement("input");
     tempInput.value = downloadKey;
     document.body.appendChild(tempInput);
@@ -90,31 +117,28 @@ const Upload = ({
   };
 
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
-      <div className="bg-white shadow-lg rounded-xl w-full max-w-lg p-8">
-        <h1 className="text-3xl font-bold text-gray text-center mb-6">
-          Upload Your File
-        </h1>
+    <div className="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8 space-y-6">
+        {/* Title */}
+        <div className="text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold">Upload Your File</h1>
+          <p className="text-gray-500 mt-1">
+            Securely share files with a simple key.
+          </p>
+        </div>
 
+        {/* File upload area */}
         <label
           htmlFor="fileUpload"
-          className="flex flex-col items-center justify-center border-2 border-dashed border-black rounded-lg h-48 cursor-pointer hover:border-teal-500 transition duration-300 relative"
+          className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition duration-300 ease-in-out
+            ${
+              file
+                ? "border-teal-500 bg-teal-50"
+                : "border-gray-300 bg-gray-50 hover:border-teal-500 hover:bg-teal-50"
+            }`}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-12 w-12 text-teal-500"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16V4m0 0l-4 4m4-4l4 4M17 8v12m0 0l-4-4m4 4l4-4"
-            />
-          </svg>
-          <p className="text-gray">Click or drag a file here</p>
           <input
             type="file"
             id="fileUpload"
@@ -122,75 +146,88 @@ const Upload = ({
             className="hidden"
             accept="*/*"
           />
+          <div className="flex flex-col items-center justify-center">
+            <UploadCloud
+              className={`h-12 w-12 transition-colors duration-300 ${
+                file ? "text-teal-600" : "text-gray-400"
+              }`}
+            />
+            <p className="mt-3 text-sm text-gray-500">
+              <span className="font-semibold text-teal-600">
+                Click to upload
+              </span>{" "}
+              or drag and drop
+            </p>
+          </div>
         </label>
 
-        {file && previewUrl && (
-          <div className="mt-4 flex flex-col items-center">
-            <img
-              src={previewUrl}
-              alt="preview"
-              className="max-h-40 rounded-md shadow-md"
-            />
+        {/* File preview and upload button */}
+        {file && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-3">
+                {previewUrl ? (
+                  <img
+                    src={previewUrl}
+                    alt="preview"
+                    className="h-12 w-12 object-cover rounded-md"
+                  />
+                ) : (
+                  <FileText className="h-12 w-12 text-teal-500" />
+                )}
+                <span className="text-gray-800 font-medium truncate">
+                  {file.name}
+                </span>
+              </div>
+              <button
+                onClick={handleRemoveFile}
+                className="text-gray-400 hover:text-red-500 transition-colors"
+                title="Remove file"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <button
-              onClick={handleRemoveFile}
-              className="mt-2 text-red-500 hover:underline text-xs"
+              onClick={handleUpload}
+              disabled={uploading || downloadKey}
+              className="w-full bg-teal-500 text-white font-semibold py-3 rounded-xl hover:bg-teal-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Remove File
+              {uploading ? "Uploading..." : "Upload File"}
             </button>
           </div>
         )}
 
-        {file && !previewUrl && (
-          <div className="mt-4 flex justify-between items-center border p-3 rounded-md shadow-inner bg-gray-50">
-            <span className="text-gray-800">{file.name}</span>
-            <button
-              onClick={handleRemoveFile}
-              className="text-red-500 hover:underline text-xs"
-            >
-              Remove
-            </button>
-          </div>
-        )}
-
+        {/* Download key display */}
         {downloadKey && (
-          <div className="mt-6 p-4 bg-gray-100 rounded-lg text-center">
-            <p className="text-lg font-semibold text-gray-800">
-              Share this key to download your file:
+          <div className="bg-teal-50 text-teal-800 p-4 rounded-xl space-y-3 shadow-inner">
+            <p className="text-sm font-medium">
+              File uploaded! Share this key to download:
             </p>
-            <div className="flex items-center justify-center mt-2">
-              <span className="font-mono text-xl tracking-widest text-teal-600 border-b-2 border-dashed border-teal-300 px-4 py-1">
+            <div className="flex items-center justify-between bg-teal-100 p-2 rounded-lg">
+              <span className="font-mono text-lg font-bold tracking-wider truncate px-2">
                 {downloadKey}
               </span>
               <button
                 onClick={handleCopyToClipboard}
-                className="ml-4 p-2 bg-teal-500 text-white rounded-md hover:bg-teal-600 transition"
-                title="Copy to clipboard"
+                className="flex-shrink-0 bg-teal-500 text-white p-2 rounded-md hover:bg-teal-600 transition-colors"
+                title="Copy key to clipboard"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
-                  <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
-                </svg>
+                <Copy className="h-5 w-5" />
               </button>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end mt-6">
-          <button
-            onClick={handleUpload}
-            disabled={uploading || downloadKey}
-            className="bg-teal-500 text-white px-4 py-2 rounded-lg hover:bg-teal-600 transition disabled:opacity-50"
+        {/* Message area for success and errors */}
+        {message && (
+          <p
+            className={`mt-4 text-center font-medium ${
+              downloadKey ? "text-green-600" : "text-red-500"
+            }`}
           >
-            {uploading ? "Uploading..." : "Upload"}
-          </button>
-        </div>
-
-        {message && <p className="mt-4 text-center text-red-500">{message}</p>}
+            {message}
+          </p>
+        )}
       </div>
     </div>
   );

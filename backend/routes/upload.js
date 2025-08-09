@@ -55,9 +55,9 @@ router.post(
 
       uploadStream.on("finish", async () => {
         const downloadKey = crypto
-          .randomBytes(3)
+          .randomBytes(8)
           .toString("hex")
-          .substring(0, 5)
+          .substring(0, 8)
           .toUpperCase();
         console.log("Generated download key:", downloadKey);
 
