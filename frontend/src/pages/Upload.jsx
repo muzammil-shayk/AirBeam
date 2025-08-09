@@ -117,8 +117,8 @@ const Upload = () => {
   };
 
   return (
-    <div className="bg-gray-50 text-gray-800 min-h-screen flex items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8 space-y-6">
+    <div className=" text-gray-800 flex min-h-[calc(100vh-160px)] bg-beigelight items-center justify-center">
+      <div className="bg-white rounded-2xl shadow-xl lg:w-full lg:max-w-lg p-6 sm:p-8 space-y-6">
         {/* Title */}
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Upload Your File</h1>

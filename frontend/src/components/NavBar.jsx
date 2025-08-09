@@ -8,12 +8,17 @@ const Navbar = ({ currentPage, onPageChange }) => {
     "text-gray hover:bg-teal-600 hover:text-white rounded-md transition";
 
   return (
-    <nav className="w-full h-20 bg-teal-500 z-50">
-      <div className="h-20 flex justify-between items-center px-4">
+    <nav className="w-full h-24 bg-teal-500 z-50">
+      {/* 🚨 This inner div now has h-full and uses flex and items-center to align its contents */}
+      <div className="h-full flex justify-between items-center lg:px-4">
         <div className="airbeam-logo">
-          <img src={namelogo} alt="AirBeam Logo" className="h-64 w-auto" />
+          <img
+            src={namelogo}
+            alt="AirBeam Logo"
+            className="lg:h-64 h-44 w-auto lg:w-auto"
+          />
         </div>
-        <div className="lg:pr-8 space-x-4">
+        <div className="lg:pr-8 lg:space-x-4">
           <button
             className={`${baseButtonStyle} ${
               currentPage === "upload" ? activeStyle : inactiveStyle

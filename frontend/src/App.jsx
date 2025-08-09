@@ -1,25 +1,33 @@
 import React, { useState } from "react";
-import Navbar from "./components/NavBar.jsx";
+import Navbar from "./components/Navbar";
+import Footer from "./components/Footer"; // Assuming you have imported Footer
 import Upload from "./pages/Upload";
 import Download from "./pages/Download";
 
 const App = () => {
-  // 🚨 State for navigation
   const [currentPage, setCurrentPage] = useState("upload");
 
-  // 🚨 State for upload details, lifted from Upload.jsx to persist across page changes
+  // All application state is managed here
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [downloadKey, setDownloadKey] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
   };
 
+  const resetState = () => {
+    setFile(null);
+    setUploading(false);
+    setMessage("");
+    setDownloadKey(null);
+    setPreviewUrl(null);
+  };
+
   const renderPage = () => {
     if (currentPage === "upload") {
-      // 🚨 Pass all the necessary state and setters as props to the Upload page
       return (
         <Upload
           file={file}
@@ -30,22 +38,26 @@ const App = () => {
           setMessage={setMessage}
           downloadKey={downloadKey}
           setDownloadKey={setDownloadKey}
+          previewUrl={previewUrl}
+          setPreviewUrl={setPreviewUrl}
+          resetState={resetState}
         />
       );
     }
     if (currentPage === "download") {
-      // 🚨 Pass the downloadKey to the Download page
-      return <Download downloadKey={downloadKey} />;
+      return <Download downloadKey={downloadKey} resetState={resetState} />;
     }
-    // Default to the upload page if no other page is selected
     return <Upload />;
   };
 
   return (
-    <>
+    // 🚨 The layout is now set up here using a parent div with flex properties.
+    <div className="flex flex-col h-screen">
       <Navbar currentPage={currentPage} onPageChange={handlePageChange} />
-      {renderPage()}
-    </>
+      {/* 🚨 The main content area now has flex-grow to fill the available space. */}
+      <main>{renderPage()}</main>
+      <Footer />
+    </div>
   );
 };
 
