@@ -6,21 +6,17 @@ import {
   Copy,
   Image as ImageIcon,
   FileText,
-} from "lucide-react"; // Using lucide-react for a modern icon set
+} from "lucide-react";
 
 const Upload = () => {
-  // State for file management
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [downloadKey, setDownloadKey] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
 
-  // A mock backend endpoint for demonstration purposes.
-  // Replace this with your actual backend URL.
   const API_URL = "http://localhost:5001/api/upload";
 
-  // New function to reset the component state to its initial values
   const resetState = () => {
     setFile(null);
     setPreviewUrl(null);
@@ -28,7 +24,6 @@ const Upload = () => {
     setDownloadKey(null);
   };
 
-  // Handle file selection from the input
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
