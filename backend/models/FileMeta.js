@@ -19,8 +19,6 @@ const fileMetaSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// 🚨 UPDATED: Using `pre('deleteOne')` with `{ document: true }` is the correct hook
-// for triggering document-level deletion logic with modern Mongoose versions.
 fileMetaSchema.pre("deleteOne", { document: true }, async function (next) {
   console.log(
     `Pre-deleteOne hook triggered for file with key: ${this.downloadKey}`

@@ -64,7 +64,7 @@ router.post(
         try {
           const meta = await FileMeta.create({
             filename: uploadStream.filename,
-            originalName: req.file.originalname, // Ensure originalName is explicitly passed
+            originalName: req.file.originalname,
             size: req.file.size,
             contentType: req.file.mimetype, // Ensure contentType is explicitly passed
             gridFsId: uploadStream.id,

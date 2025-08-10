@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-// Renamed the imported icon to avoid a naming conflict with the component
 import { Download as DownloadIcon, X } from "lucide-react";
 
 const Download = ({ initialDownloadKey }) => {
@@ -7,7 +6,6 @@ const Download = ({ initialDownloadKey }) => {
   const [message, setMessage] = useState("");
   const [downloading, setDownloading] = useState(false);
 
-  // New function to reset the component state
   const resetState = () => {
     setKeyInput("");
     setMessage("");
@@ -23,14 +21,10 @@ const Download = ({ initialDownloadKey }) => {
     setDownloading(true);
     setMessage("Preparing download...");
 
-    // Using window.open() to trigger the download in a new tab, which is
-    // a better user experience than navigating the current page away.
     const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
     const downloadUrl = `${API_URL}/api/download/${keyInput}`;
     window.open(downloadUrl, "_blank");
 
-    // The download starts in a new tab, so we can't reliably track it.
-    // We'll reset the state after a short delay and provide a message.
     setTimeout(() => {
       setDownloading(false);
       setMessage("Download request sent! Check your browser's downloads.");

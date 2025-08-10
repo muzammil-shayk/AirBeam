@@ -11,7 +11,6 @@ import cron from "node-cron";
 const app = express();
 dotenv.config();
 
-// Apply a comprehensive CORS configuration.
 const corsOptions = {
   origin: "http://localhost:5173",
   methods: ["GET", "POST", "DELETE", "OPTIONS"],

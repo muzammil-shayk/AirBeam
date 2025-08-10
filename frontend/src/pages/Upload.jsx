@@ -28,8 +28,8 @@ const Upload = () => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
       setFile(selectedFile);
-      setMessage(""); // Clear any previous messages
-      setDownloadKey(null); // Clear any old download keys
+      setMessage("");
+      setDownloadKey(null);
     }
   };
 
@@ -83,14 +83,14 @@ const Upload = () => {
       setUploading(true);
       setMessage("");
 
-      // Simulate API call to the backend
+      // API call to the backend
       const res = await axios.post(API_URL, formData);
 
       if (res.status === 200) {
         const { downloadKey } = res.data;
         setDownloadKey(downloadKey);
         setMessage("File uploaded successfully! Share this key to download.");
-        setFile(null); // Clear the file after successful upload
+        setFile(null);
       }
     } catch (err) {
       console.error("Upload failed:", err);

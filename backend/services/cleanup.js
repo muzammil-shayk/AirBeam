@@ -1,7 +1,6 @@
 import cron from "node-cron";
 import FileMeta from "../models/FileMeta.js";
 
-// The cleanup function
 const cleanupOldFiles = async () => {
   console.log("Running cleanup job for old files...");
 
@@ -18,8 +17,6 @@ const cleanupOldFiles = async () => {
 
   console.log(`Found ${oldFiles.length} old files. Deleting...`);
 
-  // Loop through each old file and delete it.
-  // Using .deleteOne() on the document instance triggers the pre-remove hook.
   for (const file of oldFiles) {
     try {
       await file.deleteOne();

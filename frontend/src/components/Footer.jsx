@@ -3,10 +3,8 @@ import { Linkedin, Github, Mail } from "lucide-react"; // Import more icons
 
 const ExpandedFooter = () => {
   return (
-    // A multi-column footer with different sections for navigation, social links, and contact info.
     <footer className="w-full bg-teal-500 text-white py-12 mt-auto">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
-        {/* Company Info Section */}
         <div>
           <h2 className="text-xl font-bold mb-2">AirBeam</h2>
           <p className="text-sm">
@@ -29,8 +27,6 @@ const ExpandedFooter = () => {
             </a>
           </div>
         </div>
-
-        {/* Navigation Links Section */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Quick Links</h3>
           <ul className="space-y-2 text-sm">
@@ -51,8 +47,6 @@ const ExpandedFooter = () => {
             </li>
           </ul>
         </div>
-
-        {/* Legal and Resources Section */}
         <div>
           <h3 className="text-lg font-semibold mb-3">Resources</h3>
           <ul className="space-y-2 text-sm">

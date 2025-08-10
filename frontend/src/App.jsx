@@ -1,13 +1,11 @@
 import React, { useState } from "react";
-import Navbar from "./components/Navbar";
-import Footer from "./components/Footer"; // Assuming you have imported Footer
-import Upload from "./pages/Upload";
-import Download from "./pages/Download";
+import Navbar from "./components/NavBar.jsx";
+import Footer from "./components/Footer.jsx";
+import Upload from "./pages/Upload.jsx";
+import Download from "./pages/Download.jsx";
 
 const App = () => {
   const [currentPage, setCurrentPage] = useState("upload");
-
-  // All application state is managed here
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
@@ -51,10 +49,8 @@ const App = () => {
   };
 
   return (
-    // 🚨 The layout is now set up here using a parent div with flex properties.
     <div className="flex flex-col h-screen">
       <Navbar currentPage={currentPage} onPageChange={handlePageChange} />
-      {/* 🚨 The main content area now has flex-grow to fill the available space. */}
       <main>{renderPage()}</main>
       <Footer />
     </div>

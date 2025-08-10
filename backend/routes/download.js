@@ -29,8 +29,6 @@ router.get("/:downloadKey", async (req, res) => {
     // Open a download stream using the GridFS ID from the metadata
     const downloadStream = bucket.openDownloadStream(fileMeta.gridFsId);
 
-    // 🚨 FIX: Explicitly set the headers before piping the stream.
-    // This is the most reliable way to ensure the browser gets the correct info.
     const filename = encodeURIComponent(fileMeta.originalName);
     const contentType = fileMeta.contentType || "application/octet-stream";
 
@@ -47,12 +45,10 @@ router.get("/:downloadKey", async (req, res) => {
       "Content-Disposition": `attachment; filename="${filename}"; filename*=UTF-8''${filename}`,
     });
 
-    // Pipe the download stream directly to the response
     downloadStream.pipe(res);
 
     downloadStream.on("error", (err) => {
       console.error("GridFS download stream error:", err);
-      // Ensure we don't try to send headers if they've already been sent
       if (!res.headersSent) {
         res
           .status(500)

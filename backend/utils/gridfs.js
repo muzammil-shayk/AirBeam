@@ -1,8 +1,6 @@
 // A simple utility to connect to GridFS and delete a file
 import mongoose from "mongoose";
 
-// 🚨 UPDATED: We now get the GridFSBucket instance inside the function
-// to ensure the database connection is ready.
 export const deleteGridFSFile = async (gridFsId) => {
   if (!gridFsId) {
     console.error("No GridFS ID provided for deletion.");
