@@ -7,6 +7,7 @@ import downloadRoutes from "./routes/download.js";
 import FileMeta from "./models/FileMeta.js";
 import cleanupOldFiles from "./services/cleanup.js";
 import cron from "node-cron";
+import path from "path";
 
 const app = express();
 dotenv.config();
@@ -39,6 +40,16 @@ app.get("/", (req, res) => {
 // Routes
 app.use("/api/upload", uploadRoutes);
 app.use("/api/download", downloadRoutes);
+
+if (process.env.NODE_ENV === "production") {
+  // Serve static files from the React build folder
+  app.use(express.static(path.join(path.resolve(), "client/dist")));
+
+  // Any request that doesn't match an API route gets sent to the React app
+  app.get("*", (req, res) => {
+    res.sendFile(path.resolve(path.resolve(), "client/dist/index.html"));
+  });
+}
 
 const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
