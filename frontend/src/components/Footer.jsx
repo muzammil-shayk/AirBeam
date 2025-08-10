@@ -32,46 +32,6 @@ const ExpandedFooter = () => {
             </a>
           </div>
         </div>
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Quick Links</h3>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                About Us
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                Contact
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                FAQ
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold mb-3">Resources</h3>
-          <ul className="space-y-2 text-sm">
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                Privacy Policy
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                Terms of Service
-              </a>
-            </li>
-            <li>
-              <a href="#" className="hover:text-teal-200 transition-colors">
-                Help Center
-              </a>
-            </li>
-          </ul>
-        </div>
       </div>
       <div className="container mx-auto mt-8 pt-4 border-t border-teal-400 text-center text-sm">
         <p className="font-medium">
