@@ -1,6 +1,6 @@
 import React from "react";
-import namelogo from "../assets/airbeamL.png";
-import { Upload, Download } from "lucide-react"; // 🚨 NEW: Import Lucide icons
+import namelogo from "../assets/airbeamlogo.svg";
+import { Upload, Download } from "lucide-react";
 
 const Navbar = ({ currentPage, onPageChange }) => {
   const baseButtonStyle =
@@ -13,7 +13,7 @@ const Navbar = ({ currentPage, onPageChange }) => {
           <img
             src={namelogo}
             alt="AirBeam Logo"
-            className="h-20 md:h-44 w-auto"
+            className="h-20 md:h-56 w-auto"
           />
         </div>
         <div className="flex items-center md:space-x-4">

@@ -1,12 +1,17 @@
 import React from "react";
 import { Linkedin, Github, Mail } from "lucide-react"; // Import more icons
+import namelogo from "../assets/airbeamlogo.svg";
 
 const ExpandedFooter = () => {
   return (
-    <footer className="w-full bg-teal-500 text-white py-12 mt-auto">
+    <footer className="w-full bg-teal-500 text-white py-10 mt-auto">
       <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
         <div>
-          <h2 className="text-xl font-bold mb-2">AirBeam</h2>
+          <img
+            src={namelogo}
+            alt="AirBeam Logo"
+            className="h-44 w-auto invert -mb-12 -mt-16 lg:ml-0 -ml-3"
+          />
           <p className="text-sm">
             A simple and secure way to share files with a key.
           </p>
