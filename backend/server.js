@@ -4,16 +4,16 @@ import cors from "cors";
 import dotenv from "dotenv";
 import uploadRoutes from "./routes/upload.js";
 import downloadRoutes from "./routes/download.js";
-import FileMeta from "./models/FileMeta.js";
 import cleanupOldFiles from "./services/cleanup.js";
 import cron from "node-cron";
-import path from "path";
+import path from "path"; // 🚨 NEW: Import the path module
 
 const app = express();
 dotenv.config();
 
+// Apply a comprehensive CORS configuration.
 const corsOptions = {
-  origin: "https://airbeam.onrender.com",
+  origin: "http://localhost:5173",
   methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };
@@ -25,6 +25,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
+    // Schedule cleanup task to run every 6 minutes
     cron.schedule("*/6 * * * *", cleanupOldFiles);
     console.log("Cleanup cron job scheduled.");
   })
@@ -33,14 +34,12 @@ mongoose
     process.exit(1);
   });
 
-app.get("/", (req, res) => {
-  res.send("AirBeam Backend API is running!");
-});
-
-// Routes
+// Routes for the API
 app.use("/api/upload", uploadRoutes);
 app.use("/api/download", downloadRoutes);
 
+// 🚨 NEW: Catch-all route to serve the React app
+// This must be placed after all other API routes
 if (process.env.NODE_ENV === "production") {
   // Serve static files from the React build folder
   app.use(express.static(path.join(path.resolve(), "client/dist")));
