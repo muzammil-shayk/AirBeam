@@ -21,7 +21,8 @@ const Download = ({ initialDownloadKey }) => {
     setDownloading(true);
     setMessage("Preparing download...");
 
-    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+    const API_URL =
+      import.meta.env.VITE_API_URL || "https://airbeam-backend.onrender.com";
     const downloadUrl = `${API_URL}/api/download/${keyInput}`;
     window.open(downloadUrl, "_blank");
 
