@@ -32,6 +32,10 @@ mongoose
     process.exit(1);
   });
 
+app.get("/", (req, res) => {
+  res.send("AirBeam Backend API is running!");
+});
+
 // Routes
 app.use("/api/upload", uploadRoutes);
 app.use("/api/download", downloadRoutes);
