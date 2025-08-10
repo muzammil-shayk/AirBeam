@@ -5,7 +5,7 @@ import namelogo from "../assets/airbeamlogo.svg";
 const ExpandedFooter = () => {
   return (
     <footer className="w-full bg-teal-500 text-white py-10 mt-auto">
-      <div className="container mx-auto grid grid-cols-1 md:grid-cols-3 gap-8 px-4">
+      <div className="container mx-auto grid grid-cols-1 lg:grid-cols-3 gap-8 px-4">
         <div>
           <img
             src={namelogo}
