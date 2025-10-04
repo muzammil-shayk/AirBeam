@@ -14,6 +14,7 @@ const Upload = () => {
   const [message, setMessage] = useState("");
   const [downloadKey, setDownloadKey] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const API_URL = import.meta.env.VITE_API_URL + "/api/upload";
 
@@ -22,6 +23,7 @@ const Upload = () => {
     setPreviewUrl(null);
     setMessage("");
     setDownloadKey(null);
+    setUploadProgress(0);
   };
 
   const handleFileChange = (e) => {
@@ -82,9 +84,17 @@ const Upload = () => {
     try {
       setUploading(true);
       setMessage("");
+      setUploadProgress(0);
 
       // API call to the backend
-      const res = await axios.post(API_URL, formData);
+      const res = await axios.post(API_URL, formData, {
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setUploadProgress(percentCompleted);
+        },
+      });
 
       if (res.status === 200) {
         const { downloadKey } = res.data;
@@ -170,7 +180,7 @@ const Upload = () => {
                 ) : (
                   <FileText className="h-12 w-12 text-teal-500" />
                 )}
-                <span className="text-gray-800 font-medium truncate">
+                <span className="text-gray-800 font-medium break-words">
                   {file.name}
                 </span>
               </div>
@@ -185,9 +195,21 @@ const Upload = () => {
             <button
               onClick={handleUpload}
               disabled={uploading || downloadKey}
-              className="w-full bg-teal-500 text-white font-semibold py-3 rounded-xl hover:bg-teal-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full bg-teal-500 text-white font-semibold py-3 rounded-xl hover:bg-teal-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
             >
-              {uploading ? "Uploading..." : "Upload File"}
+              {uploading ? (
+                <div className="flex items-center justify-center">
+                  <span className="relative z-10">
+                    Uploading... {uploadProgress}%
+                  </span>
+                  <div
+                    className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
+                </div>
+              ) : (
+                "Upload File"
+              )}
             </button>
           </div>
         )}
