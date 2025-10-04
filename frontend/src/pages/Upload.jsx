@@ -100,7 +100,8 @@ const Upload = () => {
         const { downloadKey } = res.data;
         setDownloadKey(downloadKey);
         setMessage("File uploaded successfully! Share this key to download.");
-        setFile(null);
+        // Delay clearing file so UI updates instantly
+        setTimeout(() => setFile(null), 100);
       }
     } catch (err) {
       console.error("Upload failed:", err);
