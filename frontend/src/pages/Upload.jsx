@@ -60,6 +60,20 @@ const Upload = () => {
     };
   }, [files]);
 
+  // Handle Enter key for upload
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Enter") {
+        if (files.length > 0 && !uploading && !downloadKey) {
+          handleUpload();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [files, uploading, downloadKey]);
+
   // Remove a specific file
   const handleRemoveFile = (indexToRemove) => {
     setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));

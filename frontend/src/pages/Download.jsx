@@ -58,6 +58,11 @@ const Download = ({ initialDownloadKey }) => {
                 .replace(/[^A-Z0-9]/g, "");
               setKeyInput(val);
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && keyInput && !downloading) {
+                handleDownload();
+              }
+            }}
             placeholder="e.g., F1A2B3C4"
             maxLength={8}
           />
