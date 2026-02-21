@@ -35,7 +35,7 @@ const ExpandedFooter = () => {
       </div>
       <div className="container mx-auto mt-8 pt-4 border-t border-teal-400 text-center text-sm">
         <p className="font-medium">
-          © 2025 Developed by M. Muzammil. All rights reserved.
+          © 2026 Developed by M. Muzammil. All rights reserved.
         </p>
       </div>
     </footer>
