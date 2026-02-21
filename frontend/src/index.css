@@ -7,3 +7,17 @@
   --color-brown: #b17457;
   --color-darkteal: #274b5b;
 }
+
+@layer base {
+  html,
+  body {
+    /* Set background to beigelight to prevent white edges on overscroll */
+    background-color: var(--color-beigelight);
+    /* Prevent pull-to-refresh and elastic scrolling for app-like behavior */
+    overscroll-behavior-y: none;
+    /* Remove default gray highlight on tap on mobile devices */
+    -webkit-tap-highlight-color: transparent;
+    /* Allow panning but prevent double-tap to zoom */
+    touch-action: pan-x pan-y;
+  }
+}
