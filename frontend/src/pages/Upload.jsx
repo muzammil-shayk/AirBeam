@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import JSZip from "jszip";
 import {
   UploadCloud,
   X,
@@ -9,27 +10,21 @@ import {
 } from "lucide-react";
 
 const Upload = () => {
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
   const [downloadKey, setDownloadKey] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewUrls, setPreviewUrls] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [isZipping, setIsZipping] = useState(false);
+  const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL + "/api/upload";
 
-  const resetState = () => {
-    setFile(null);
-    setPreviewUrl(null);
-    setMessage("");
-    setDownloadKey(null);
-    setUploadProgress(0);
-  };
-
   const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      setFile(selectedFile);
+    const selectedFiles = Array.from(e.target.files);
+    if (selectedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...selectedFiles]);
       setMessage("");
       setDownloadKey(null);
     }
@@ -42,9 +37,9 @@ const Upload = () => {
 
   const handleDrop = (e) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      setFile(droppedFile);
+    const droppedFiles = Array.from(e.dataTransfer.files);
+    if (droppedFiles.length > 0) {
+      setFiles((prev) => [...prev, ...droppedFiles]);
       setMessage("");
       setDownloadKey(null);
     }
@@ -52,45 +47,55 @@ const Upload = () => {
 
   // Create an object URL for image previews
   useEffect(() => {
-    if (!file) {
-      setPreviewUrl(null);
-      return;
-    }
-    const isImage = file.type.startsWith("image/");
-    if (isImage) {
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      return () => URL.revokeObjectURL(url);
-    } else {
-      setPreviewUrl(null);
-    }
-  }, [file]);
+    const newPreviewUrls = {};
+    files.forEach((f, index) => {
+      if (f.type.startsWith("image/")) {
+        newPreviewUrls[index] = URL.createObjectURL(f);
+      }
+    });
+    setPreviewUrls(newPreviewUrls);
 
-  // Remove the selected file by resetting the state
-  const handleRemoveFile = () => {
-    resetState();
+    return () => {
+      Object.values(newPreviewUrls).forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
+
+  // Remove a specific file
+  const handleRemoveFile = (indexToRemove) => {
+    setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
   };
 
   // Handle the file upload process
   const handleUpload = async () => {
-    if (!file) {
-      setMessage("Please select a file first.");
+    if (files.length === 0) {
+      setMessage("Please select files first.");
       return;
     }
 
-    const formData = new FormData();
-    formData.append("file", file);
+    setUploading(true);
+    setIsZipping(true);
+    setMessage("Zipping files...");
+    setUploadProgress(0);
 
     try {
-      setUploading(true);
-      setMessage("");
-      setUploadProgress(0);
+      const zip = new JSZip();
+      files.forEach((f) => {
+        zip.file(f.name, f);
+      });
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      setIsZipping(false);
+      setMessage("Uploading...");
+
+      const formData = new FormData();
+      // Giving the zoomed blob a filename so backend treats it properly
+      formData.append("file", zipBlob, "download.zip");
 
       // API call to the backend
       const res = await axios.post(API_URL, formData, {
         onUploadProgress: (progressEvent) => {
           const percentCompleted = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total
+            (progressEvent.loaded * 100) / progressEvent.total,
           );
           setUploadProgress(percentCompleted);
         },
@@ -99,15 +104,21 @@ const Upload = () => {
       if (res.status === 200) {
         const { downloadKey } = res.data;
         setDownloadKey(downloadKey);
-        setMessage("File uploaded successfully! Share this key to download.");
-        // Delay clearing file so UI updates instantly
-        setTimeout(() => setFile(null), 100);
+        setMessage("Files uploaded successfully! Share this key to download.");
+        // We do NOT call resetState() completely here so the user can see the key.
+        // We only clear the files to reset the input area.
+        setFiles([]);
+        setPreviewUrls({});
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
     } catch (err) {
       console.error("Upload failed:", err);
       setMessage("Upload failed. Please try again.");
     } finally {
       setUploading(false);
+      setIsZipping(false);
     }
   };
 
@@ -138,7 +149,7 @@ const Upload = () => {
           htmlFor="fileUpload"
           className={`relative flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-xl cursor-pointer transition duration-300 ease-in-out
             ${
-              file
+              files.length > 0
                 ? "border-teal-500 bg-teal-50"
                 : "border-gray-300 bg-gray-50 hover:border-teal-500 hover:bg-teal-50"
             }`}
@@ -148,6 +159,8 @@ const Upload = () => {
           <input
             type="file"
             id="fileUpload"
+            multiple
+            ref={fileInputRef}
             onChange={handleFileChange}
             className="hidden"
             accept="*/*"
@@ -155,43 +168,50 @@ const Upload = () => {
           <div className="flex flex-col items-center justify-center">
             <UploadCloud
               className={`h-12 w-12 transition-colors duration-300 ${
-                file ? "text-teal-600" : "text-gray-400"
+                files.length > 0 ? "text-teal-600" : "text-gray-400"
               }`}
             />
             <p className="mt-3 text-sm text-gray-500">
               <span className="font-semibold text-teal-600">
                 Click to upload
               </span>{" "}
-              or drag and drop
+              or drag and drop multiple files
             </p>
           </div>
         </label>
 
         {/* File preview and upload button */}
-        {file && (
+        {files.length > 0 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50">
-              <div className="flex items-center space-x-3">
-                {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt="preview"
-                    className="h-12 w-12 object-cover rounded-md"
-                  />
-                ) : (
-                  <FileText className="h-12 w-12 text-teal-500" />
-                )}
-                <span className="text-gray-800 font-medium break-words">
-                  {file.name}
-                </span>
-              </div>
-              <button
-                onClick={handleRemoveFile}
-                className="text-gray-400 hover:text-red-500 transition-colors"
-                title="Remove file"
-              >
-                <X className="h-5 w-5" />
-              </button>
+            <div className="max-h-48 overflow-y-auto space-y-2 pr-2">
+              {files.map((f, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50"
+                >
+                  <div className="flex items-center space-x-3 truncate">
+                    {previewUrls[index] ? (
+                      <img
+                        src={previewUrls[index]}
+                        alt="preview"
+                        className="h-10 w-10 object-cover rounded-md flex-shrink-0"
+                      />
+                    ) : (
+                      <FileText className="h-10 w-10 text-teal-500 flex-shrink-0" />
+                    )}
+                    <span className="text-gray-800 font-medium truncate">
+                      {f.name}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleRemoveFile(index)}
+                    className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
+                    title="Remove file"
+                  >
+                    <X className="h-5 w-5" />
+                  </button>
+                </div>
+              ))}
             </div>
             <button
               onClick={handleUpload}
@@ -201,15 +221,19 @@ const Upload = () => {
               {uploading ? (
                 <div className="flex items-center justify-center">
                   <span className="relative z-10">
-                    Uploading... {uploadProgress}%
+                    {isZipping
+                      ? "Zipping files..."
+                      : `Uploading... ${uploadProgress}%`}
                   </span>
-                  <div
-                    className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
+                  {!isZipping && (
+                    <div
+                      className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
+                      style={{ width: `${uploadProgress}%` }}
+                    />
+                  )}
                 </div>
               ) : (
-                "Upload File"
+                `Upload ${files.length} File${files.length > 1 ? "s" : ""} as ZIP`
               )}
             </button>
           </div>

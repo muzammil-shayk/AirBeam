@@ -12,7 +12,7 @@ const app = express();
 dotenv.config();
 
 const corsOptions = {
-  origin: "https://airbeam.onrender.com",
+  origin: ["https://airbeam.onrender.com", "http://localhost:5173"],
   methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

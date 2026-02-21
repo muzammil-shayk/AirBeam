@@ -54,11 +54,13 @@ router.post(
       uploadStream.end(req.file.buffer);
 
       uploadStream.on("finish", async () => {
-        const downloadKey = crypto
-          .randomBytes(8)
-          .toString("hex")
-          .substring(0, 8)
-          .toUpperCase();
+        // Generate an 8-character uppercase alphanumeric key
+        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        let downloadKey = "";
+        for (let i = 0; i < 8; i++) {
+          const randomIndex = crypto.randomInt(0, chars.length);
+          downloadKey += chars[randomIndex];
+        }
         console.log("Generated download key:", downloadKey);
 
         try {
@@ -96,7 +98,7 @@ router.post(
       console.error("Server error:", err);
       if (!res.headersSent) res.status(500).json({ error: "Server error" });
     }
-  }
+  },
 );
 
 export default router;

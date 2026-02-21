@@ -52,8 +52,14 @@ const Download = ({ initialDownloadKey }) => {
             type="text"
             className="w-full text-center text-lg font-mono tracking-widest p-3 rounded-lg border-2 border-gray-300 text-gray-800 outline-none focus:border-teal-500 transition-colors duration-300"
             value={keyInput}
-            onChange={(e) => setKeyInput(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value
+                .toUpperCase()
+                .replace(/[^A-Z0-9]/g, "");
+              setKeyInput(val);
+            }}
             placeholder="e.g., F1A2B3C4"
+            maxLength={8}
           />
         </div>
 
