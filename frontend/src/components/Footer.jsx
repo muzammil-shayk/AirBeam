@@ -17,10 +17,12 @@ const ExpandedFooter = () => {
               Simple and secure no-login file sharing with AirBeam.
             </p>
           </div>
-          
+
           <div className="flex space-x-6">
             <a
               href="https://www.linkedin.com/in/muhammad-muzammil-8771a4309/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-teal-200 transition-colors"
               aria-label="LinkedIn"
             >
@@ -28,6 +30,8 @@ const ExpandedFooter = () => {
             </a>
             <a
               href="https://github.com/muzammil-shayk"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-teal-200 transition-colors"
               aria-label="GitHub"
             >
@@ -35,6 +39,8 @@ const ExpandedFooter = () => {
             </a>
             <a
               href="https://m-muzammil.vercel.app"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-white hover:text-teal-200 transition-colors"
               aria-label="Portfolio"
             >
@@ -42,7 +48,7 @@ const ExpandedFooter = () => {
             </a>
           </div>
         </div>
-        
+
         <div className="mt-6 pt-4 border-t border-teal-400 text-center text-[10px] uppercase tracking-widest opacity-80">
           © 2026 Developed by M. Muzammil. All rights reserved.
         </div>
