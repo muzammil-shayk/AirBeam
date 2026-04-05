@@ -1,16 +1,28 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Navbar from "./components/NavBar.jsx";
 import Footer from "./components/Footer.jsx";
 import Upload from "./pages/Upload.jsx";
 import Download from "./pages/Download.jsx";
 
 const App = () => {
-  const [currentPage, setCurrentPage] = useState("upload");
+  const [currentPage, setCurrentPage] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("key") ? "download" : "upload";
+  });
   const [file, setFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState("");
-  const [downloadKey, setDownloadKey] = useState(null);
+  const [downloadKey, setDownloadKey] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("key")?.toUpperCase() || null;
+  });
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    if (window.location.search.includes("key=")) {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -43,7 +55,7 @@ const App = () => {
       );
     }
     if (currentPage === "download") {
-      return <Download downloadKey={downloadKey} resetState={resetState} />;
+      return <Download initialDownloadKey={downloadKey} resetState={resetState} />;
     }
     return <Upload />;
   };

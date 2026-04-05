@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import JSZip from "jszip";
 import {
   UploadCloud,
   X,
@@ -16,13 +15,24 @@ const Upload = () => {
   const [downloadKey, setDownloadKey] = useState(null);
   const [previewUrls, setPreviewUrls] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [isZipping, setIsZipping] = useState(false);
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL + "/api/upload";
 
   const handleFileChange = (e) => {
     const selectedFiles = Array.from(e.target.files);
+    
+    if (files.length + selectedFiles.length > 10) {
+      setMessage("You can only upload a maximum of 10 files at once.");
+      return;
+    }
+
+    const totalSize = [...files, ...selectedFiles].reduce((acc, f) => acc + f.size, 0);
+    if (totalSize > 200 * 1024 * 1024) {
+      setMessage("Total file size exceeds the 200MB limit.");
+      return;
+    }
+
     if (selectedFiles.length > 0) {
       setFiles((prev) => [...prev, ...selectedFiles]);
       setMessage("");
@@ -38,6 +48,18 @@ const Upload = () => {
   const handleDrop = (e) => {
     e.preventDefault();
     const droppedFiles = Array.from(e.dataTransfer.files);
+
+    if (files.length + droppedFiles.length > 10) {
+      setMessage("You can only upload a maximum of 10 files at once.");
+      return;
+    }
+
+    const totalSize = [...files, ...droppedFiles].reduce((acc, f) => acc + f.size, 0);
+    if (totalSize > 200 * 1024 * 1024) {
+      setMessage("Total file size exceeds the 200MB limit.");
+      return;
+    }
+
     if (droppedFiles.length > 0) {
       setFiles((prev) => [...prev, ...droppedFiles]);
       setMessage("");
@@ -87,23 +109,13 @@ const Upload = () => {
     }
 
     setUploading(true);
-    setIsZipping(true);
-    setMessage("Zipping files...");
     setUploadProgress(0);
 
     try {
-      const zip = new JSZip();
-      files.forEach((f) => {
-        zip.file(f.name, f);
-      });
-
-      const zipBlob = await zip.generateAsync({ type: "blob" });
-      setIsZipping(false);
-      setMessage("Uploading...");
-
       const formData = new FormData();
-      // Giving the zoomed blob a filename so backend treats it properly
-      formData.append("file", zipBlob, "download.zip");
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
 
       // API call to the backend
       const res = await axios.post(API_URL, formData, {
@@ -132,7 +144,6 @@ const Upload = () => {
       setMessage("Upload failed. Please try again.");
     } finally {
       setUploading(false);
-      setIsZipping(false);
     }
   };
 
@@ -235,19 +246,15 @@ const Upload = () => {
               {uploading ? (
                 <div className="flex items-center justify-center">
                   <span className="relative z-10">
-                    {isZipping
-                      ? "Zipping files..."
-                      : `Uploading... ${uploadProgress}%`}
+                    {`Uploading... ${uploadProgress}%`}
                   </span>
-                  {!isZipping && (
-                    <div
-                      className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
-                      style={{ width: `${uploadProgress}%` }}
-                    />
-                  )}
+                  <div
+                    className="absolute left-0 top-0 h-full bg-teal-600 transition-all duration-300 ease-out"
+                    style={{ width: `${uploadProgress}%` }}
+                  />
                 </div>
               ) : (
-                `Upload ${files.length} File${files.length > 1 ? "s" : ""} as ZIP`
+                `Upload ${files.length} File${files.length > 1 ? "s" : ""}`
               )}
             </button>
           </div>
@@ -255,12 +262,22 @@ const Upload = () => {
 
         {/* Download key display */}
         {downloadKey && (
-          <div className="bg-teal-50 text-teal-800 p-4 rounded-xl space-y-3 shadow-inner">
-            <p className="text-sm font-medium">
-              File uploaded! Share this key to download:
-            </p>
+          <div className="bg-teal-50 text-teal-800 p-4 rounded-xl space-y-4 shadow-inner">
+            <div className="flex flex-col items-center justify-center space-y-2">
+              <p className="text-sm font-medium">Scan to open on your phone:</p>
+              <div className="bg-white p-2 rounded-lg shadow-sm border border-teal-100 mt-2">
+                <img 
+                  src={`https://airqr.vercel.app/api/qr?data=${encodeURIComponent(`${window.location.origin}/?key=${downloadKey}`)}&color=%23000000&margin=2`} 
+                  alt="Download QR Code" 
+                  className="w-40 h-40 object-contain"
+                />
+              </div>
+            </div>
+
+            <div className="border-t border-teal-200 my-2 pt-2 text-center text-sm font-medium">Download Key</div>
+
             <div className="flex items-center justify-between bg-teal-100 p-2 rounded-lg">
-              <span className="font-mono text-lg font-bold tracking-wider truncate px-2">
+              <span className="font-mono text-lg font-bold tracking-wider truncate px-2 text-teal-900">
                 {downloadKey}
               </span>
               <button

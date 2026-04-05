@@ -10,7 +10,7 @@ const fileMetaSchema = new mongoose.Schema(
     gridFsId: { type: mongoose.Schema.Types.ObjectId, required: true },
     uploaderIP: { type: String, required: false },
     downloadCount: { type: Number, default: 0 },
-    downloadKey: { type: String, required: true, unique: true },
+    downloadKey: { type: String, required: true },
     createdAt: {
       type: Date,
       default: Date.now,

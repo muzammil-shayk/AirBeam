@@ -17,7 +17,7 @@ const upload = multer({
 router.post(
   "/",
   (req, res, next) => {
-    upload.single("file")(req, res, (err) => {
+    upload.array("files", 10)(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         console.error("Multer Error:", err);
         return res
@@ -33,72 +33,77 @@ router.post(
     });
   },
   async (req, res) => {
-    if (!req.file) return res.status(400).json({ error: "No file provided" });
+    if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No files provided" });
+
+    // Verify collective size <= 200MB
+    const totalSize = req.files.reduce((acc, file) => acc + file.size, 0);
+    if (totalSize > 200 * 1024 * 1024) {
+      return res.status(400).json({ error: "Total combined file size exceeds 200MB limit." });
+    }
 
     try {
       const db = mongoose.connection.db;
       const bucket = new GridFSBucket(db, { bucketName: "uploads" });
 
-      // Console log the incoming file details for debugging.
-      console.log("File received:", {
-        originalname: req.file.originalname,
-        mimetype: req.file.mimetype,
-        size: req.file.size,
-      });
+      // Generate a single 8-character uppercase alphanumeric key for all files
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+      let downloadKey = "";
+      for (let i = 0; i < 8; i++) {
+        downloadKey += chars[crypto.randomInt(0, chars.length)];
+      }
 
-      const uploadStream = bucket.openUploadStream(req.file.originalname, {
-        contentType: req.file.mimetype,
-        metadata: { originalName: req.file.originalname },
-      });
+      console.log(`Generated download key: ${downloadKey} for ${req.files.length} files`);
 
-      uploadStream.end(req.file.buffer);
-
-      uploadStream.on("finish", async () => {
-        // Generate an 8-character uppercase alphanumeric key
-        const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        let downloadKey = "";
-        for (let i = 0; i < 8; i++) {
-          const randomIndex = crypto.randomInt(0, chars.length);
-          downloadKey += chars[randomIndex];
-        }
-        console.log("Generated download key:", downloadKey);
-
-        try {
-          const meta = await FileMeta.create({
-            filename: uploadStream.filename,
-            originalName: req.file.originalname,
-            size: req.file.size,
-            contentType: req.file.mimetype, // Ensure contentType is explicitly passed
-            gridFsId: uploadStream.id,
-            uploaderIP: req.ip,
-            downloadKey: downloadKey,
+      const uploadPromises = req.files.map((file) => {
+        return new Promise((resolve, reject) => {
+          const uploadStream = bucket.openUploadStream(file.originalname, {
+            contentType: file.mimetype,
+            metadata: { originalName: file.originalname },
           });
 
-          console.log("File metadata saved with key:", meta.downloadKey);
-          console.log("File metadata saved:", meta);
+          uploadStream.end(file.buffer);
 
-          res.json({
-            message: "File uploaded successfully",
-            fileId: uploadStream.id,
-            downloadKey: downloadKey,
-            meta,
+          uploadStream.on("finish", async () => {
+            try {
+              const meta = await FileMeta.create({
+                filename: uploadStream.filename,
+                originalName: file.originalname,
+                size: file.size,
+                contentType: file.mimetype,
+                gridFsId: uploadStream.id,
+                uploaderIP: req.ip,
+                downloadKey: downloadKey,
+              });
+              resolve(meta);
+            } catch (dbErr) {
+              console.error("Database save error:", dbErr);
+              reject(dbErr);
+            }
           });
-        } catch (dbErr) {
-          console.error("Database save error:", dbErr);
-          if (!res.headersSent)
-            res.status(500).json({ error: "Failed to save file metadata" });
-        }
+
+          uploadStream.on("error", (err) => {
+            console.error("GridFS upload error:", err);
+            reject(err);
+          });
+        });
       });
 
-      uploadStream.on("error", (err) => {
-        console.error("GridFS upload error:", err);
-        if (!res.headersSent) res.status(500).json({ error: "Upload failed" });
+      // Await all uploads to finish
+      const savedMetas = await Promise.all(uploadPromises);
+      console.log(`Successfully saved metadata for ${savedMetas.length} files with key ${downloadKey}.`);
+
+      res.json({
+        message: "Files uploaded successfully",
+        downloadKey: downloadKey,
+        filesCount: savedMetas.length,
+        metas: savedMetas,
       });
+
     } catch (err) {
-      console.error("Server error:", err);
+      console.error("Server error during upload processing:", err);
       if (!res.headersSent) res.status(500).json({ error: "Server error" });
     }
-  },
+  }
 );
 
 export default router;

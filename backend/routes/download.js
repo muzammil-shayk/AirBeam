@@ -5,8 +5,8 @@ import FileMeta from "../models/FileMeta.js";
 
 const router = express.Router();
 
-// Route to handle file downloads using a unique key
-router.get("/:downloadKey", async (req, res) => {
+// Route to get list of files for a specific key
+router.get("/info/:downloadKey", async (req, res) => {
   const { downloadKey } = req.params;
 
   if (!downloadKey) {
@@ -14,31 +14,46 @@ router.get("/:downloadKey", async (req, res) => {
   }
 
   try {
-    // Find the file metadata using the download key
-    const fileMeta = await FileMeta.findOne({ downloadKey });
+    const fileMetas = await FileMeta.find({ downloadKey });
 
-    if (!fileMeta) {
+    if (!fileMetas || fileMetas.length === 0) {
       return res
         .status(404)
-        .json({ message: "File not found or key is invalid." });
+        .json({ message: "Files not found or key is invalid." });
+    }
+
+    res.json({ files: fileMetas });
+  } catch (error) {
+    console.error("Info route error:", error);
+    res.status(500).json({ message: "Server error." });
+  }
+});
+
+// Route to handle individual file downloads using GridFS ID
+router.get("/file/:gridFsId", async (req, res) => {
+  const { gridFsId } = req.params;
+
+  if (!gridFsId) {
+    return res.status(400).json({ message: "File ID is missing." });
+  }
+
+  try {
+    // Find the file metadata using the GridFS ID
+    const fileMeta = await FileMeta.findOne({ gridFsId });
+
+    if (!fileMeta) {
+      return res.status(404).json({ message: "File not found." });
     }
 
     const db = mongoose.connection.db;
     const bucket = new GridFSBucket(db, { bucketName: "uploads" });
 
     // Open a download stream using the GridFS ID from the metadata
-    const downloadStream = bucket.openDownloadStream(fileMeta.gridFsId);
+    const objectId = new mongoose.Types.ObjectId(gridFsId);
+    const downloadStream = bucket.openDownloadStream(objectId);
 
     const filename = encodeURIComponent(fileMeta.originalName);
     const contentType = fileMeta.contentType || "application/octet-stream";
-
-    // Log the headers to confirm they are being set correctly on the server side
-    console.log("Setting headers for download:");
-    console.log("Content-Type:", contentType);
-    console.log(
-      "Content-Disposition:",
-      `attachment; filename="${filename}"; filename*=UTF-8''${filename}`
-    );
 
     res.set({
       "Content-Type": contentType,
