@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Download as DownloadIcon, X, FileText, DownloadCloud } from "lucide-react";
+import { Download as DownloadIcon, X, FileText, DownloadCloud, Clock } from "lucide-react";
 import axios from "axios";
 import JSZip from "jszip";
+import CountdownTimer from "../components/CountdownTimer.jsx";
+import SEOSection from "../components/SEOSection.jsx";
 
 const API_URL = import.meta.env.VITE_API_URL || "https://airbeam-backend.onrender.com";
 
@@ -12,6 +14,7 @@ const Download = ({ initialDownloadKey }) => {
   const [files, setFiles] = useState([]);
   const [zippingAll, setZippingAll] = useState(false);
   const [zipProgress, setZipProgress] = useState(0);
+  const [isExpired, setIsExpired] = useState(false);
 
 
   const handleFetchFiles = useCallback(async (key) => {
@@ -28,6 +31,7 @@ const Download = ({ initialDownloadKey }) => {
       const res = await axios.get(`${API_URL}/api/download/info/${key}`);
       const fetchedFiles = res.data.files;
       setFiles(fetchedFiles);
+      setIsExpired(false);
       if (fetchedFiles.length > 0) {
         setMessage("");
       } else {
@@ -109,13 +113,19 @@ const Download = ({ initialDownloadKey }) => {
   };
 
   return (
-    <div className="bg-beigelight text-gray-800 min-h-[calc(100vh-160px)] flex items-center justify-center p-4 sm:p-6 md:p-8">
+    <div className="bg-beigelight flex flex-col items-center pt-8 pb-12 px-4 sm:px-6 md:px-8">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8 space-y-6">
         {/* Title */}
         <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold">Download Files</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold">
+            {files.length > 0 ? "Your Download is Ready" : "Secure File Download"}
+          </h1>
           <p className="text-gray-500 mt-1">
-            {files.length > 0 ? "Your ZIP is ready to download." : "Enter the key to securely fetch your files."}
+            {isExpired 
+              ? "This link has expired and files have been deleted." 
+              : files.length > 0 
+                ? "Your ZIP is ready to download." 
+                : "Enter the key to securely fetch your files."}
           </p>
         </div>
 
@@ -143,7 +153,14 @@ const Download = ({ initialDownloadKey }) => {
             />
           </div>
         ) : (
-          <div className="flex flex-col items-center space-y-4">
+          <div className={`flex flex-col items-center space-y-4 transition-opacity duration-500 ${isExpired ? "opacity-50 grayscale pointer-events-none" : "opacity-100"}`}>
+            <div className="w-full flex justify-center">
+              <CountdownTimer 
+                createdAt={files[0]?.createdAt} 
+                onExpire={() => setIsExpired(true)} 
+                label="Deleting in"
+              />
+            </div>
             <div className="bg-teal-50 text-teal-800 p-4 rounded-xl shadow-inner text-center w-full">
               <span className="font-mono text-lg font-bold tracking-wider">{keyInput}</span>
             </div>
@@ -151,8 +168,9 @@ const Download = ({ initialDownloadKey }) => {
             {files.length > 1 && (
               <button
                 onClick={handleDownloadAll}
-                disabled={zippingAll}
+                disabled={zippingAll || isExpired}
                 className="w-full flex items-center justify-center space-x-2 bg-teal-500 text-white font-bold py-3 rounded-xl hover:bg-teal-600 transition-colors shadow-md disabled:opacity-50"
+                aria-label={zippingAll ? "Preparing your ZIP archive" : "Download all files as a single ZIP archive"}
               >
                 <DownloadIcon className="h-5 w-5" />
                 <span>{zippingAll ? `Downloading ZIP... ${zipProgress}%` : "Download All as ZIP"}</span>
@@ -163,7 +181,7 @@ const Download = ({ initialDownloadKey }) => {
 
         {/* File List */}
         {files.length > 0 && (
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-2 mt-4">
+          <div className={`space-y-3 max-h-64 overflow-y-auto pr-2 mt-4 transition-opacity duration-500 ${isExpired ? "opacity-30 pointer-events-none" : "opacity-100"}`}>
             {files.map((file, idx) => (
               <div key={idx} className="flex items-center justify-between p-3 rounded-xl border border-gray-200 bg-gray-50 hover:border-teal-500 transition-colors">
                 <div className="flex items-center space-x-3 overflow-hidden flex-1">
@@ -179,8 +197,10 @@ const Download = ({ initialDownloadKey }) => {
                 </div>
                 <button
                   onClick={() => handleDownloadFile(file.gridFsId)}
-                  className="flex flex-shrink-0 items-center justify-center space-x-1 bg-teal-500 text-white p-2 px-3 rounded-lg hover:bg-teal-600 transition-colors ml-3"
+                  disabled={isExpired}
+                  className="flex flex-shrink-0 items-center justify-center space-x-1 bg-teal-500 text-white p-2 px-3 rounded-lg hover:bg-teal-600 transition-colors ml-3 disabled:opacity-50"
                   title="Download File"
+                  aria-label={`Download ${file.originalName}`}
                 >
                   <DownloadCloud className="h-4 w-4" />
                   <span className="text-sm font-semibold hidden sm:inline">Save</span>
@@ -196,6 +216,7 @@ const Download = ({ initialDownloadKey }) => {
             onClick={resetState}
             className="flex items-center space-x-2 text-gray-500 cursor-pointer hover:text-red-500 transition-colors duration-300"
             disabled={!keyInput && !message && !fetching && files.length === 0}
+            aria-label="Clear input and reset page"
           >
             <X className="h-5 w-5" />
             <span>Clear</span>
@@ -206,6 +227,7 @@ const Download = ({ initialDownloadKey }) => {
               onClick={() => handleFetchFiles(keyInput)}
               disabled={fetching || !keyInput}
               className="flex items-center space-x-2 bg-teal-500 text-white font-semibold py-3 px-6 cursor-pointer rounded-xl hover:bg-teal-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label={fetching ? "Searching for files" : "Find files associated with this key"}
             >
               <DownloadIcon className="h-5 w-5" />
               <span>{fetching ? "Searching..." : "Find Files"}</span>
@@ -213,7 +235,6 @@ const Download = ({ initialDownloadKey }) => {
           )}
         </div>
 
-        {/* Message area */}
         {message && (
           <p
             className={`mt-4 text-center font-medium ${
@@ -224,6 +245,8 @@ const Download = ({ initialDownloadKey }) => {
           </p>
         )}
       </div>
+
+      <SEOSection />
     </div>
   );
 };

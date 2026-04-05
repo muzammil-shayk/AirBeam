@@ -6,7 +6,10 @@ import {
   Copy,
   Image as ImageIcon,
   FileText,
+  Clock,
 } from "lucide-react";
+import CountdownTimer from "../components/CountdownTimer.jsx";
+import SEOSection from "../components/SEOSection.jsx";
 
 const Upload = () => {
   const [files, setFiles] = useState([]);
@@ -15,6 +18,8 @@ const Upload = () => {
   const [downloadKey, setDownloadKey] = useState(null);
   const [previewUrls, setPreviewUrls] = useState({});
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [createdAt, setCreatedAt] = useState(null);
+  const [isExpired, setIsExpired] = useState(false);
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL + "/api/upload";
@@ -37,6 +42,10 @@ const Upload = () => {
       setFiles((prev) => [...prev, ...selectedFiles]);
       setMessage("");
       setDownloadKey(null);
+      setCreatedAt(null);
+      setIsExpired(false);
+      sessionStorage.removeItem("lastUpload");
+      window.history.replaceState({}, document.title, "/");
     }
   };
 
@@ -64,6 +73,10 @@ const Upload = () => {
       setFiles((prev) => [...prev, ...droppedFiles]);
       setMessage("");
       setDownloadKey(null);
+      setCreatedAt(null);
+      setIsExpired(false);
+      sessionStorage.removeItem("lastUpload");
+      window.history.replaceState({}, document.title, "/");
     }
   };
 
@@ -96,9 +109,42 @@ const Upload = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [files, uploading, downloadKey]);
 
+  // Restore session from sessionStorage on mount
+  useEffect(() => {
+    const lastUpload = sessionStorage.getItem("lastUpload");
+    if (lastUpload) {
+      try {
+        const { downloadKey, createdAt } = JSON.parse(lastUpload);
+        
+        // Check if expired (5 mins = 300s)
+        const createdTime = new Date(createdAt).getTime();
+        const expirationTime = createdTime + 5 * 60 * 1000;
+        
+        if (Date.now() < expirationTime) {
+          setDownloadKey(downloadKey);
+          setCreatedAt(createdAt);
+          setIsExpired(false);
+          setMessage("Files uploaded successfully! Share this key to download.");
+        } else {
+          sessionStorage.removeItem("lastUpload");
+        }
+      } catch (err) {
+        console.error("Failed to restore session:", err);
+        sessionStorage.removeItem("lastUpload");
+      }
+    }
+  }, []);
+
   // Remove a specific file
   const handleRemoveFile = (indexToRemove) => {
     setFiles((prev) => prev.filter((_, index) => index !== indexToRemove));
+    if (downloadKey) {
+        setDownloadKey(null);
+        setCreatedAt(null);
+        setMessage("");
+        sessionStorage.removeItem("lastUpload");
+        window.history.replaceState({}, document.title, "/");
+    }
   };
 
   // Handle the file upload process
@@ -127,18 +173,35 @@ const Upload = () => {
         },
       });
 
-      if (res.status === 200) {
-        const { downloadKey } = res.data;
-        setDownloadKey(downloadKey);
-        setMessage("Files uploaded successfully! Share this key to download.");
-        // We do NOT call resetState() completely here so the user can see the key.
-        // We only clear the files to reset the input area.
-        setFiles([]);
-        setPreviewUrls({});
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
+        if (res.status === 200) {
+          const { downloadKey, metas } = res.data;
+          setDownloadKey(downloadKey);
+          
+          let serverCreatedAt = null;
+          if (metas && metas.length > 0) {
+            serverCreatedAt = metas[0].createdAt;
+            setCreatedAt(serverCreatedAt);
+          }
+          
+          setIsExpired(false);
+          setMessage("Files uploaded successfully! Share this key to download.");
+          
+          // Save session
+          sessionStorage.setItem("lastUpload", JSON.stringify({ 
+            downloadKey, 
+            createdAt: serverCreatedAt 
+          }));
+          
+          // Update URL
+          window.history.pushState(null, "", `/?key=${downloadKey}`);
+          
+          // Clear inputs
+          setFiles([]);
+          setPreviewUrls({});
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
         }
-      }
     } catch (err) {
       console.error("Upload failed:", err);
       setMessage("Upload failed. Please try again.");
@@ -158,9 +221,13 @@ const Upload = () => {
     setMessage("Key copied to clipboard!");
   };
 
+
+
   return (
-    <div className=" text-gray-800 flex min-h-[calc(100vh-160px)] bg-beigelight items-center justify-center p-4 sm:p-6 md:p-8">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8 space-y-6">
+    <div className="bg-beigelight flex flex-col items-center pt-8 pb-12 px-4 sm:px-6 md:px-8 overflow-hidden">
+      <div className={`flex flex-col lg:flex-row gap-8 w-full transition-all duration-1000 ease-in-out justify-center items-center lg:items-start ${downloadKey ? "max-w-6xl" : "max-w-lg"}`}>
+        {/* Main Upload Card */}
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6 sm:p-8 space-y-6 flex-shrink-0 transition-all duration-500 z-10 self-start">
         {/* Title */}
         <div className="text-center">
           <h1 className="text-2xl sm:text-3xl font-bold">Upload Your File</h1>
@@ -196,11 +263,12 @@ const Upload = () => {
                 files.length > 0 ? "text-teal-600" : "text-gray-400"
               }`}
             />
-            <p className="mt-3 text-sm text-gray-500">
-              <span className="font-semibold text-teal-600">
-                Click to upload
-              </span>{" "}
-              or drag and drop multiple files
+            <p className="mt-3 text-sm text-gray-500 text-center">
+              <span className="font-semibold text-teal-600 block sm:inline">
+                <span className="sm:hidden">Tap to upload</span>
+                <span className="hidden sm:inline">Click to upload</span>
+              </span>
+              <span className="hidden sm:inline"> or drag and drop multiple files</span>
             </p>
           </div>
         </label>
@@ -232,6 +300,7 @@ const Upload = () => {
                     onClick={() => handleRemoveFile(index)}
                     className="text-gray-400 hover:text-red-500 transition-colors flex-shrink-0 ml-2"
                     title="Remove file"
+                    aria-label={`Remove ${f.name}`}
                   >
                     <X className="h-5 w-5" />
                   </button>
@@ -242,6 +311,7 @@ const Upload = () => {
               onClick={handleUpload}
               disabled={uploading || downloadKey}
               className="w-full bg-teal-500 text-white font-semibold py-3 rounded-xl hover:bg-teal-600 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed relative overflow-hidden"
+              aria-label={uploading ? "Uploading in progress" : `Upload ${files.length} selected files`}
             >
               {uploading ? (
                 <div className="flex items-center justify-center">
@@ -260,48 +330,85 @@ const Upload = () => {
           </div>
         )}
 
-        {/* Download key display */}
-        {downloadKey && (
-          <div className="bg-teal-50 text-teal-800 p-4 rounded-xl space-y-4 shadow-inner">
-            <div className="flex flex-col items-center justify-center space-y-2">
-              <p className="text-sm font-medium">Scan to open on your phone:</p>
-              <div className="bg-white p-2 rounded-lg shadow-sm border border-teal-100 mt-2">
+        {message && (
+          <div className="mt-4 flex flex-col items-center">
+            <p
+              className={`text-center font-medium ${
+                downloadKey ? "text-green-600" : "text-red-500"
+              }`}
+            >
+              {message}
+            </p>
+            
+            {/* Contextual Clear Button */}
+            <button 
+              onClick={() => {
+                sessionStorage.clear();
+                window.location.href = "/";
+              }}
+              className="mt-2 text-[10px] uppercase tracking-widest font-bold text-gray-400 hover:text-red-500 transition-colors flex items-center space-x-1"
+              aria-label="Clear session"
+            >
+              <X className="h-3 w-3" />
+              <span>Clear</span>
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Success Card Wrapper - Handles the glide and expansion animation */}
+      <div 
+        className={`transition-all duration-1000 ease-in-out overflow-hidden w-full flex-shrink-0 rounded-2xl shadow-xl 
+        ${downloadKey 
+          ? "max-h-[800px] opacity-100 lg:max-w-lg lg:max-h-full lg:translate-x-0" 
+          : "max-h-0 opacity-0 lg:max-w-0 lg:max-h-full lg:translate-x-12"}`}
+      >
+        <div className={`bg-white w-full max-w-lg p-6 sm:p-8 space-y-6 transition-all duration-500 ${isExpired ? "grayscale opacity-50 pointer-events-none" : "opacity-100"}`}>
+          <div className="bg-teal-50 text-teal-800 p-6 rounded-xl space-y-6 shadow-inner">
+            <div className="flex flex-col items-center justify-center space-y-4">
+              <div className="w-full flex justify-center pb-2">
+                <CountdownTimer 
+                  createdAt={createdAt} 
+                  onExpire={() => setIsExpired(true)} 
+                  label="Deleting in"
+                />
+              </div>
+              <p className="text-sm font-bold text-teal-900">Scan to open on your phone</p>
+              <div className="bg-white p-3 rounded-2xl shadow-md border border-teal-100 transition-all duration-700 hover:scale-105 hover:shadow-lg">
                 <img 
                   src={`https://airqr.vercel.app/api/qr?data=${encodeURIComponent(`${window.location.origin}/?key=${downloadKey}`)}&color=%23000000&margin=2`} 
-                  alt="Download QR Code" 
-                  className="w-40 h-40 object-contain"
+                  alt={`QR code to download files with key ${downloadKey}`} 
+                  className="w-48 h-48 object-contain"
                 />
               </div>
             </div>
 
-            <div className="border-t border-teal-200 my-2 pt-2 text-center text-sm font-medium">Download Key</div>
+            <div className="border-t border-teal-200 my-4 pt-4 text-center text-xs uppercase font-extrabold tracking-widest text-teal-600">Download Key</div>
 
-            <div className="flex items-center justify-between bg-teal-100 p-2 rounded-lg">
-              <span className="font-mono text-lg font-bold tracking-wider truncate px-2 text-teal-900">
+            <div className="flex items-center justify-between bg-white p-3 rounded-xl border border-teal-100 shadow-sm">
+              <span className="font-mono text-xl font-bold tracking-widest truncate px-2 text-teal-900">
                 {downloadKey}
               </span>
               <button
                 onClick={handleCopyToClipboard}
-                className="flex-shrink-0 bg-teal-500 text-white p-2 rounded-md hover:bg-teal-600 transition-colors"
+                className="flex-shrink-0 bg-teal-500 text-white p-3 rounded-lg hover:bg-teal-600 transition-colors shadow-sm"
                 title="Copy key to clipboard"
+                aria-label="Copy download key to clipboard"
               >
-                <Copy className="h-5 w-5" />
+                <Copy className="h-6 w-6" />
               </button>
             </div>
+            
+            <p className="text-center text-xs text-teal-600 font-medium pt-2">
+              Files are stored securely for 5 minutes only.
+            </p>
           </div>
-        )}
-
-        {/* Message area for success and errors */}
-        {message && (
-          <p
-            className={`mt-4 text-center font-medium ${
-              downloadKey ? "text-green-600" : "text-red-500"
-            }`}
-          >
-            {message}
-          </p>
-        )}
+        </div>
       </div>
+      </div>
+
+
+      <SEOSection />
     </div>
   );
 };

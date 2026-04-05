@@ -1,52 +1,84 @@
-**AirBeam**
-AirBeam is a simple and secure cloud-based file-sharing tool that allows you to effortlessly upload a file and share it with anyone using a unique access key. Say goodbye to email attachments and complex file transfers.
+# 🚀 AirBeam | Fast, Free & Secure No-Login File Sharing
 
-**Features:**
-_Secure File Uploads:_ Upload your files to a cloud server with a clean, intuitive interface.
+[![React](https://img.shields.io/badge/Frontend-React-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
+[![Node.js](https://img.shields.io/badge/Backend-Node.js-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MongoDB](https://img.shields.io/badge/Database-MongoDB_Atlas-47A248?logo=mongodb&logoColor=white)](https://www.mongodb.com/cloud/atlas)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-_Unique Access Keys:_ Each upload generates a unique, single-use key for secure and private sharing.
+**AirBeam** is a high-performance, minimalist file-sharing platform designed for speed and security. Upload multiple files, get a unique shareable key or QR code, and let your recipients download everything as a single ZIP—**all without ever creating an account.**
 
-_Easy Downloads:_ Recipients can download the file with just the key, no login required.
+---
 
-_Cloud-Based Storage:_ Files are stored securely on the cloud, freeing up local storage space.
+## ✨ Key Features
 
-_Minimalist Design:_ A simple, straightforward user experience focused on one thing: getting your files where they need to go.
+- **⚡ No-Login Required**: Start sharing instantly. No email, no passwords, no friction.
+- **📦 Multi-File Albums**: Upload up to 10 files (200MB total) and share them as a single collection.
+- **📱 QR Code Sharing**: Integrated with **AirQR API** for seamless mobile-to-desktop transfers.
+- **⏳ Real-Time Expiration**: Files are automatically deleted after 5 minutes for maximum privacy.
+- **🔒 Secure Storage**: Powered by **MongoDB GridFS** for robust and scalable file handling.
+- **🎨 Premium UI**: A sleek, responsive design with real-time countdown timers and delightful micro-animations.
 
-**Getting Started**
-This project is built with a modern web stack. To get a local copy up and running, follow these steps.
+---
 
-**Prerequisites**
-Node.js
+## 🛠️ Tech Stack
 
-npm
+- **Frontend**: React, TailwindCSS (for sleek styling), Lucide Icons.
+- **Backend**: Node.js, Express, Multer (multi-part handling).
+- **Storage**: MongoDB GridFS (efficient large file storage).
+- **Cleanup**: Node-cron (automated 5-minute ephemeral deletion logic).
 
-A cloud storage service (e.g., AWS S3, Google Cloud Storage)
+---
 
-A cloud-based database (e.g., MongoDB Atlas, Firestore)
+## 🚀 Quick Start
 
-**Installation**
-Clone the repository:
-
-git clone https://github.com/your-username/airbeam.git
-cd airbeam
-
-**Install dependencies:**
+### 1. Clone & Install
+```bash
+git clone https://github.com/muzammil-shayk/AirBeam.git
+cd AirBeam
 npm install
+```
 
-Set up your environment variables.
+### 2. Configure Environment
+Create a `.env` file in the `backend/` directory:
+```env
+PORT=5000
+MONGO_URI=your_mongodb_atlas_connection_string
+FRONTEND_URL=http://localhost:3000
+```
 
-Create a .env file in the root directory.
+### 3. Run Locally
+```bash
+# Start Backend
+cd backend
+npm run dev
 
-Add your cloud storage credentials and database connection string.
+# Start Frontend (Search for http://localhost:5173)
+cd ../frontend
+npm run dev
+```
 
-**Run the application:**
-npm start
+---
 
-**Technologies Used**
-Frontend: ReactJS
+## 🔌 API Integration (AirQR)
 
-Backend: Node.js, Express.js
+AirBeam uses the **AirQR API** to generate high-resolution, black-and-white QR codes for every upload session. Want to use it in your own project?
 
-Database: MongoDB Atlas (for storing file metadata and keys)
+```http
+GET https://airqr.vercel.app/api/qr?data=https://airbeam.onrender.com/?key=YOUR_KEY
+```
 
-Cloud Storage: AWS S3 (for file storage)
+---
+
+## 🛡️ Security & Privacy
+
+Files uploaded to AirBeam are stored temporarily and are **permanently destroyed** from our servers 5 minutes after upload. We do not log user data or track file contents.
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+Created with ❤️ by the AirBeam Team.
