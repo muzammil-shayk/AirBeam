@@ -38,7 +38,7 @@ const ExpandedFooter = () => {
               <Github size={22} />
             </a>
             <a
-              href="https://m-muzammil.vercel.app"
+              href="https://m-muzammil.dev"
               target="_blank"
               rel="noopener noreferrer"
               className="text-white hover:text-teal-200 transition-colors"
