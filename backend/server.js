@@ -24,7 +24,14 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    cron.schedule("*/6 * * * *", cleanupOldFiles);
+    cron.schedule("*/6 * * * *", async () => {
+      await cleanupOldFiles();
+      // Render free tier sleeps after 15 min without inbound HTTP traffic.
+      // Hitting our own public URL counts as inbound and keeps the instance awake.
+      if (process.env.RENDER_EXTERNAL_URL) {
+        fetch(process.env.RENDER_EXTERNAL_URL).catch(() => {});
+      }
+    });
     console.log("Cleanup cron job scheduled.");
   })
   .catch((err) => {
