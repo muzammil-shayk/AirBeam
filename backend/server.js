@@ -19,25 +19,28 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Connect to MongoDB
+// Connect to MongoDB. Mongoose retries on its own, so a failure here is
+// logged and left alone rather than taking the whole process down with it.
 mongoose
   .connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log("MongoDB connected");
-    cron.schedule("*/6 * * * *", async () => {
-      await cleanupOldFiles();
-      // Render free tier sleeps after 15 min without inbound HTTP traffic.
-      // Hitting our own public URL counts as inbound and keeps the instance awake.
-      if (process.env.RENDER_EXTERNAL_URL) {
-        fetch(process.env.RENDER_EXTERNAL_URL).catch(() => {});
-      }
-    });
-    console.log("Cleanup cron job scheduled.");
-  })
-  .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1);
-  });
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => console.error("MongoDB connection error:", err));
+
+// Scheduled outside the connect promise: if Mongo is unreachable at boot, the
+// keep-alive ping below still has to run or Render puts the instance to sleep.
+cron.schedule("*/6 * * * *", async () => {
+  try {
+    await cleanupOldFiles();
+  } catch (err) {
+    console.error("Cleanup job failed:", err);
+  }
+  // Render free tier sleeps after 15 min without inbound HTTP traffic.
+  // Hitting our own public URL counts as inbound and keeps the instance awake.
+  if (process.env.RENDER_EXTERNAL_URL) {
+    fetch(process.env.RENDER_EXTERNAL_URL).catch(() => {});
+  }
+});
+console.log("Cleanup cron job scheduled.");
 
 app.get("/", (req, res) => {
   res.send("AirBeam Backend API is running!");
