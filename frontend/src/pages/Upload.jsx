@@ -52,6 +52,13 @@ const canPickFolders = () =>
   "webkitdirectory" in document.createElement("input") &&
   !window.matchMedia("(hover: none) and (pointer: coarse)").matches;
 
+// On Android, "*/*" makes Chrome open a chooser with Camera/Camcorder/Recorder first.
+// "application/octet-stream" skips those and goes straight to the file apps (Samsung My Files, Files)
+// while still allowing every file type. Other platforms would filter by it, so Android only.
+const FILE_ACCEPT = /android/i.test(navigator.userAgent)
+  ? "application/octet-stream"
+  : "*/*";
+
 const Upload = () => {
   // Single source of truth for the reverse (clear) animation: also fed to CSS as --reverse-ms below.
   const REVERSE_ANIMATION_MS = 1000;
@@ -417,7 +424,7 @@ const Upload = () => {
                 ref={fileInputRef}
                 onChange={handleFileChange}
                 className="hidden"
-                accept="*/*"
+                accept={FILE_ACCEPT}
               />
               {folderPicker && (
                 <input
