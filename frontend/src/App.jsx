@@ -45,9 +45,9 @@ const App = () => {
   };
 
   return (
-    <div className="flex flex-col">
+    <div className="flex min-h-svh flex-col">
       <Navbar currentPage={currentPage} onPageChange={handlePageChange} />
-      <main>{renderPage()}</main>
+      <main className="flex-1">{renderPage()}</main>
       <Footer />
     </div>
   );

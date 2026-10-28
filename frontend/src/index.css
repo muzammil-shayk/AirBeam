@@ -20,4 +20,413 @@
     /* Allow panning but prevent double-tap to zoom */
     touch-action: pan-x pan-y;
   }
+  body {
+    color: var(--color-gray);
+  }
+  :root {
+    --nav-h: 4rem;
+    /* Pages override this from REVERSE_ANIMATION_MS in Upload.jsx. */
+    --reverse-ms: 1000ms;
+  }
+  @media (min-width: 40rem) {
+    :root {
+      --nav-h: 5rem;
+    }
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-teal-800);
+    outline-offset: 2px;
+  }
+  button {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+@layer components {
+  /* ---------- nav and footer: the teal bands ---------- */
+  .band {
+    @apply bg-teal-500 text-gray;
+  }
+  .nav {
+    padding-top: env(safe-area-inset-top);
+  }
+  .nav__inner {
+    @apply flex w-full items-center justify-between px-4 sm:px-8;
+    height: var(--nav-h);
+  }
+  .logo {
+    @apply h-9 w-auto sm:h-11;
+  }
+  .tabs {
+    @apply flex items-center gap-1 sm:gap-2;
+  }
+  .tab {
+    @apply flex min-h-11 items-center gap-2 rounded-lg px-3 font-bold text-gray transition-colors duration-300 hover:bg-black/10 sm:px-4;
+  }
+  .tab[aria-current="page"] {
+    @apply bg-white/35;
+  }
+  @media (max-width: 25.999rem) {
+    /* Narrow phones: labels only, so the logo and both tabs fit at 320px. */
+    .tab svg {
+      display: none;
+    }
+    .tab {
+      @apply px-2.5;
+    }
+  }
+
+  /* ---------- stage: the main action, centered ---------- */
+  .stage {
+    @apply flex flex-col items-center justify-center gap-6 px-4 pt-8 pb-12 sm:px-6;
+    min-height: calc(100svh - var(--nav-h) - 4rem);
+  }
+  .pair {
+    @apply flex w-full flex-col items-center justify-center;
+  }
+  .panel {
+    @apply flex w-full max-w-lg flex-col gap-6 rounded-2xl bg-white p-6 shadow-xl sm:p-8;
+  }
+  .panel.is-expired {
+    @apply pointer-events-none opacity-50 grayscale;
+  }
+  .panel__head {
+    @apply text-center;
+  }
+  .panel__title {
+    @apply m-0 text-2xl font-bold tracking-tight text-balance sm:text-3xl;
+  }
+  .panel__sub {
+    @apply mt-1 mb-0 text-gray-500;
+  }
+
+  /* Success panel: opens and closes in --reverse-ms (REVERSE_ANIMATION_MS). */
+  .reveal {
+    @apply grid w-full max-w-lg opacity-0;
+    grid-template-rows: 0fr;
+    margin-top: 0;
+    transition:
+      grid-template-rows var(--reverse-ms) ease-in-out,
+      opacity var(--reverse-ms) ease-in-out,
+      margin-top var(--reverse-ms) ease-in-out;
+  }
+  .reveal[data-open="true"] {
+    @apply opacity-100;
+    grid-template-rows: 1fr;
+    margin-top: 1.5rem;
+  }
+  .reveal__inner {
+    @apply min-h-0 overflow-hidden rounded-2xl shadow-xl;
+  }
+  .reveal .panel {
+    @apply shadow-none;
+  }
+  @media (min-width: 68rem) {
+    /* Wide screens: the success panel glides in beside the upload card. */
+    .pair {
+      @apply flex-row items-start;
+    }
+    .reveal {
+      width: auto;
+      min-width: 0;
+      max-width: 0;
+      /* Closed, it takes no height, so the upload card stays centered. The height snaps
+         at the far end of the glide: after it closes, before it opens. */
+      max-height: 0;
+      grid-template-rows: 1fr;
+      margin-top: 0;
+      margin-left: 0;
+      transition:
+        max-width var(--reverse-ms) ease-in-out,
+        opacity var(--reverse-ms) ease-in-out,
+        margin-left var(--reverse-ms) ease-in-out,
+        max-height 0s linear var(--reverse-ms);
+    }
+    .reveal[data-open="true"] {
+      max-width: 32rem;
+      max-height: 80rem;
+      margin-top: 0;
+      margin-left: 2rem;
+      transition-delay: 0s;
+    }
+    .reveal .panel {
+      width: 32rem;
+      max-width: none;
+    }
+  }
+
+  /* ---------- drop zone ---------- */
+  .dropzone {
+    @apply relative flex min-h-52 cursor-pointer flex-col items-center justify-center gap-4 rounded-xl border-2 border-dashed border-beigedark bg-beigelight/60 px-4 py-6 text-center transition-colors duration-300;
+  }
+  .dropzone:hover,
+  .dropzone[data-drag="true"],
+  .dropzone[data-has-files] {
+    @apply border-teal-500 bg-teal-50;
+  }
+  .dropzone__icon {
+    @apply h-12 w-12 text-gray-400 transition duration-300;
+  }
+  .dropzone:hover .dropzone__icon,
+  .dropzone[data-drag="true"] .dropzone__icon,
+  .dropzone[data-has-files] .dropzone__icon {
+    @apply -translate-y-1 text-teal-700;
+  }
+  .dropzone__hint {
+    @apply m-0 text-sm text-gray-500;
+  }
+  .dropzone__hint strong {
+    @apply font-semibold text-teal-800;
+  }
+  .dropzone__actions {
+    @apply flex flex-wrap items-center justify-center gap-2;
+  }
+
+  /* ---------- buttons ---------- */
+  .btn {
+    @apply relative isolate inline-flex min-h-12 items-center justify-center gap-2 overflow-hidden rounded-xl bg-teal-700 px-6 py-3 font-semibold text-white shadow-md transition duration-300 hover:bg-teal-800 active:scale-[0.98] disabled:opacity-50;
+  }
+  .btn:disabled {
+    @apply hover:bg-teal-700;
+  }
+  .btn--block {
+    @apply w-full;
+  }
+  .btn--icon {
+    @apply min-h-12 min-w-12 shrink-0 p-3;
+  }
+  .btn--ghost {
+    @apply min-h-11 rounded-lg border-2 border-teal-700 bg-white px-4 py-2 text-sm text-teal-800 shadow-none hover:bg-teal-50 hover:text-teal-900;
+  }
+  .btn--ghost:disabled {
+    @apply hover:bg-white;
+  }
+  .btn--sm {
+    @apply min-h-11 shrink-0 rounded-lg px-3 py-2 text-sm shadow-none sm:px-4;
+  }
+  .btn__fill {
+    @apply absolute inset-y-0 left-0 -z-10 bg-teal-900 transition-all duration-300 ease-out;
+  }
+  .btn[aria-busy="true"] {
+    @apply opacity-100;
+  }
+  .link {
+    @apply inline-flex min-h-11 items-center gap-1.5 rounded-md px-2 text-xs font-bold tracking-widest text-gray-500 uppercase transition-colors duration-300 hover:text-red-600 disabled:opacity-40 disabled:hover:text-gray-500;
+  }
+  .link--plain {
+    @apply hover:text-teal-800;
+  }
+
+  .field {
+    @apply w-full rounded-xl border-2 border-gray-300 bg-white px-2 py-3.5 text-center font-mono text-lg tracking-[0.15em] text-gray outline-none transition duration-300 sm:px-3.5 sm:tracking-[0.2em] placeholder:text-base placeholder:tracking-normal placeholder:text-gray-400 focus:border-teal-600 focus:ring-4 focus:ring-teal-500/20 sm:text-2xl;
+  }
+  .keybox {
+    @apply flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-beigedark bg-beigelight/60 p-6;
+  }
+  .keybox__label {
+    @apply mb-4 text-sm font-semibold text-gray-500;
+  }
+
+  /* ---------- file rows ---------- */
+  .staged {
+    @apply flex flex-col gap-4;
+  }
+  .staged__summary {
+    @apply m-0 flex items-center justify-between text-sm text-gray-500;
+  }
+  .rows {
+    @apply flex max-h-60 flex-col gap-2 overflow-y-auto pr-1;
+    overscroll-behavior: contain;
+  }
+  .row {
+    @apply flex items-center justify-between gap-3 rounded-xl border border-beigedark bg-beigelight/50 p-3 transition-colors duration-300 hover:border-teal-500;
+  }
+  .row__main {
+    @apply flex min-w-0 flex-1 items-center gap-3;
+  }
+  .row__text {
+    @apply flex min-w-0 flex-col;
+  }
+  .row__name {
+    @apply truncate font-medium text-gray;
+  }
+  .row__meta {
+    @apply text-xs text-gray-500;
+  }
+  .row__icon {
+    @apply h-9 w-9 shrink-0 text-teal-700;
+  }
+  .row__thumb {
+    @apply h-9 w-9 shrink-0 rounded-md object-cover;
+  }
+  .icon-btn {
+    @apply inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-500 transition-colors duration-300 hover:bg-red-50 hover:text-red-600;
+  }
+
+  .status {
+    @apply m-0 text-center font-medium;
+  }
+  .status[data-tone="ok"] {
+    @apply text-teal-800;
+  }
+  .status[data-tone="error"] {
+    @apply text-red-700;
+  }
+
+  /* ---------- live key panel ---------- */
+  .live {
+    @apply flex flex-col gap-5 rounded-xl border border-teal-100 bg-teal-50 p-5 text-teal-900 sm:p-6;
+  }
+  .live__label {
+    @apply m-0 text-center text-sm font-bold;
+  }
+  .live__heading {
+    @apply m-0 border-t border-teal-200 pt-4 text-center text-xs font-extrabold tracking-widest text-teal-800 uppercase;
+  }
+  .live__foot {
+    @apply m-0 text-center text-xs font-medium text-teal-800;
+  }
+  .qr {
+    @apply mx-auto rounded-2xl border border-teal-100 bg-white p-3 shadow-md transition duration-500 hover:scale-105;
+  }
+  .qr img {
+    @apply block h-44 w-44 object-contain sm:h-48 sm:w-48;
+  }
+  .key {
+    @apply flex items-center justify-between gap-3 rounded-xl border border-teal-100 bg-white p-2 pl-4 shadow-sm;
+  }
+  .key--solo {
+    @apply justify-center py-3 pl-2;
+  }
+  .key__value {
+    @apply truncate font-mono text-lg font-bold tracking-wider text-darkteal sm:text-xl sm:tracking-widest;
+  }
+
+  /* ---------- countdown: plain numerals ---------- */
+  .timer {
+    @apply flex items-center justify-between gap-4 rounded-xl bg-white px-4 py-3 text-teal-900 shadow-sm;
+  }
+  .timer__label {
+    @apply flex items-center gap-2 text-sm font-semibold;
+  }
+  .timer__digits {
+    @apply font-mono text-3xl leading-none font-bold text-darkteal;
+  }
+  .timer[data-urgent="true"] {
+    @apply text-red-700;
+  }
+  .timer[data-urgent="true"] .timer__digits {
+    @apply text-red-600;
+  }
+  .timer[data-expired="true"] {
+    @apply text-gray-500;
+  }
+  .timer[data-expired="true"] .timer__digits {
+    @apply text-gray-500;
+  }
+
+  /* ---------- notes under the card ---------- */
+  .caption {
+    @apply m-0 max-w-lg text-center text-sm text-gray-500 text-balance;
+  }
+  .hint {
+    @apply flex max-w-md items-start gap-3 rounded-xl border border-beigedark bg-white/60 py-2 pr-1 pl-4 text-sm text-gray-600;
+  }
+  .hint__icon {
+    @apply mt-2.5 h-4 w-4 shrink-0 text-teal-700;
+  }
+  .hint__text {
+    @apply m-0 py-2;
+  }
+  .hint__title {
+    @apply font-semibold text-gray;
+  }
+
+  /* ---------- why ---------- */
+  .why {
+    @apply mx-auto w-full max-w-5xl px-4 pt-8 pb-16 sm:px-8;
+  }
+  .why__head {
+    @apply mb-8 text-center;
+  }
+  .why__title {
+    @apply m-0 text-xl font-extrabold tracking-tight text-gray;
+  }
+  .why__intro {
+    @apply mx-auto mt-2 mb-0 max-w-2xl text-sm text-gray-500;
+  }
+  .why__grid {
+    @apply m-0 grid list-none grid-cols-1 gap-6 p-0 sm:grid-cols-2 lg:grid-cols-3;
+  }
+  .why__card {
+    @apply flex flex-col items-center rounded-3xl border border-beigedark bg-white p-6 text-center shadow-sm transition duration-300 hover:border-teal-500 hover:shadow-md;
+  }
+  .why__chip {
+    @apply mb-4 rounded-2xl bg-teal-50 p-3 text-teal-700;
+  }
+  .why__card h3 {
+    @apply m-0 mb-2 text-base font-bold text-gray;
+  }
+  .why__card p {
+    @apply m-0 text-xs leading-relaxed font-medium text-gray-500;
+  }
+
+  /* ---------- footer ---------- */
+  .footer__inner {
+    @apply mx-auto w-full max-w-5xl px-4 py-8;
+  }
+  .footer__top {
+    @apply flex flex-col items-center gap-4 md:flex-row md:justify-between;
+  }
+  .footer__brand {
+    @apply flex flex-col items-center gap-2 md:items-start;
+  }
+  .footer__tagline {
+    @apply m-0 text-xs;
+  }
+  .footer__links {
+    @apply m-0 flex list-none gap-2 p-0;
+  }
+  .footer__link {
+    @apply flex h-11 w-11 items-center justify-center rounded-lg transition-colors duration-300 hover:bg-black/10;
+  }
+  .footer__legal {
+    @apply m-0 mt-6 border-t border-teal-700/30 pt-4 text-center text-[10px] tracking-widest uppercase;
+  }
+}
+
+/* Tabular figures wherever a number counts down. */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* ------------------------------------------------------------------
+   Reduced motion: every state change stays visible, the travel goes.
+------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal[data-open="true"],
+  .dropzone,
+  .dropzone__icon,
+  .btn,
+  .btn__fill,
+  .qr,
+  .row,
+  .why__card,
+  .field {
+    transition-duration: 0.01ms;
+    transition-delay: 0s;
+  }
+  .dropzone:hover .dropzone__icon,
+  .dropzone[data-drag="true"] .dropzone__icon,
+  .dropzone[data-has-files] .dropzone__icon {
+    transform: none;
+  }
+  .btn:active,
+  .qr:hover {
+    transform: none;
+  }
 }

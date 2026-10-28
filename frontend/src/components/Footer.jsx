@@ -1,60 +1,43 @@
 import React from "react";
-import { Linkedin, Github, Mail, User } from "lucide-react"; // Import more icons
-import namelogo from "../assets/airbeamlogo.svg";
+import { Linkedin, Github, User } from "lucide-react";
+import logo from "../assets/airbeamlogo.svg";
+import { FOOTER } from "../content.js";
 
-const ExpandedFooter = () => {
+const ICONS = {
+  LinkedIn: <Linkedin size={22} aria-hidden="true" />,
+  GitHub: <Github size={22} aria-hidden="true" />,
+  Portfolio: <User size={22} aria-hidden="true" />,
+};
+
+const Footer = () => {
   return (
-    <footer className="w-full bg-teal-500 text-white py-6 mt-auto">
-      <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row items-center md:justify-between space-y-4 md:space-y-0">
-          <div className="flex flex-col items-center md:items-start">
-            <img
-              src={namelogo}
-              alt="AirBeam Logo"
-              className="h-28 w-auto invert -mb-6 -mt-8 -ml-3"
-            />
-            <p className="text-xs opacity-90 -mt-2">
-              Simple and secure no-login file sharing with AirBeam.
-            </p>
+    <footer className="band mt-auto">
+      <div className="footer__inner">
+        <div className="footer__top">
+          <div className="footer__brand">
+            <img src={logo} alt="AirBeam" className="logo" />
+            <p className="footer__tagline">{FOOTER.tagline}</p>
           </div>
-
-          <div className="flex space-x-6">
-            <a
-              href="https://www.linkedin.com/in/muhammad-muzammil-8771a4309/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-teal-200 transition-colors"
-              aria-label="LinkedIn"
-            >
-              <Linkedin size={22} />
-            </a>
-            <a
-              href="https://github.com/muzammil-shayk"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-teal-200 transition-colors"
-              aria-label="GitHub"
-            >
-              <Github size={22} />
-            </a>
-            <a
-              href="https://m-muzammil.dev"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white hover:text-teal-200 transition-colors"
-              aria-label="Portfolio"
-            >
-              <User size={22} />
-            </a>
-          </div>
+          <ul className="footer__links">
+            {FOOTER.links.map(({ label, href }) => (
+              <li key={label}>
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer__link"
+                  aria-label={label}
+                >
+                  {ICONS[label]}
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
-
-        <div className="mt-6 pt-4 border-t border-teal-400 text-center text-[10px] uppercase tracking-widest opacity-80">
-          © 2026 Developed by M. Muzammil. All rights reserved.
-        </div>
+        <p className="footer__legal">{FOOTER.copyright}</p>
       </div>
     </footer>
   );
 };
 
-export default ExpandedFooter;
+export default Footer;

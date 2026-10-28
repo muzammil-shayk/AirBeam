@@ -42,11 +42,27 @@ const CountdownTimer = ({ createdAt, onExpire, label = "Deleting in" }) => {
     return () => clearInterval(timer);
   }, [createdAt, onExpire]);
 
+  // First render with a createdAt: the effect has not computed yet. Hold the layout instead of flashing "Expired".
+  if (timeLeft === null && createdAt) {
+    return (
+      <div className="timer">
+        <span className="timer__label">
+          <Clock className="h-4 w-4" aria-hidden="true" />
+          {label}
+        </span>
+        <span className="timer__digits num">-:--</span>
+      </div>
+    );
+  }
+
   if (timeLeft === null || timeLeft <= 0) {
     return (
-      <div className="flex items-center space-x-2 text-red-500 font-bold bg-red-50 px-3 py-1 rounded-full text-sm border border-red-100">
-        <Clock className="h-4 w-4" />
-        <span>Expired</span>
+      <div className="timer" data-expired="true">
+        <span className="timer__label">
+          <Clock className="h-4 w-4" aria-hidden="true" />
+          Expired
+        </span>
+        <span className="timer__digits num">0:00</span>
       </div>
     );
   }
@@ -56,14 +72,13 @@ const CountdownTimer = ({ createdAt, onExpire, label = "Deleting in" }) => {
   const isUrgent = timeLeft < 60;
 
   return (
-    <div className={`flex items-center space-x-2 font-mono font-bold px-3 py-1 rounded-full text-sm border transition-colors ${
-      isUrgent 
-        ? "text-red-600 bg-red-50 border-red-200 animate-pulse" 
-        : "text-teal-600 bg-teal-50 border-teal-200"
-    }`}>
-      <Clock className={`h-4 w-4 ${isUrgent ? "animate-spin-slow" : ""}`} />
-      <span>
-        {label}: {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
+    <div className="timer" data-urgent={isUrgent}>
+      <span className="timer__label">
+        <Clock className="h-4 w-4" aria-hidden="true" />
+        {label}
+      </span>
+      <span className="timer__digits num" role="timer">
+        {minutes}:{seconds < 10 ? `0${seconds}` : seconds}
       </span>
     </div>
   );

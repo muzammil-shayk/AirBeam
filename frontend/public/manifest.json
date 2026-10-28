@@ -2,9 +2,13 @@
   "name": "AirBeam",
   "short_name": "AirBeam",
   "description": "A simple and secure way to share files.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
+  "background_color": "#faf7f0",
+  "theme_color": "#8b968e",
   "icons": [
     {
       "src": "/apple-touch-icon.png",

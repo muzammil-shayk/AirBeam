@@ -4,20 +4,27 @@ import mongoose from "mongoose";
 import { GridFSBucket } from "mongodb";
 import FileMeta from "../models/FileMeta.js";
 import crypto from "crypto";
+import { fixFilenames, shouldZip, zipFilesTo } from "../utils/zip.js";
 
 const router = express.Router();
 const storage = multer.memoryStorage();
 
 // Configure multer with file size limits
+const MAX_BYTES = 200 * 1024 * 1024; // 200MB total
+const MAX_FILES = 1000;
+
+// No fileFilter: every file type is accepted. preservePath keeps the relative
+// path of files picked from a folder ("photos/a.jpg") instead of just "a.jpg".
 const upload = multer({
   storage,
-  limits: { fileSize: 200 * 1024 * 1024 }, // 200MB max
+  preservePath: true,
+  limits: { fileSize: MAX_BYTES, files: MAX_FILES },
 });
 
 router.post(
   "/",
   (req, res, next) => {
-    upload.array("files", 10)(req, res, (err) => {
+    upload.array("files", MAX_FILES)(req, res, (err) => {
       if (err instanceof multer.MulterError) {
         console.error("Multer Error:", err);
         return res
@@ -34,10 +41,11 @@ router.post(
   },
   async (req, res) => {
     if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No files provided" });
+    fixFilenames(req.files);
 
     // Verify collective size <= 200MB
     const totalSize = req.files.reduce((acc, file) => acc + file.size, 0);
-    if (totalSize > 200 * 1024 * 1024) {
+    if (totalSize > MAX_BYTES) {
       return res.status(400).json({ error: "Total combined file size exceeds 200MB limit." });
     }
 
@@ -54,39 +62,64 @@ router.post(
 
       console.log(`Generated download key: ${downloadKey} for ${req.files.length} files`);
 
-      const uploadPromises = req.files.map((file) => {
-        return new Promise((resolve, reject) => {
-          const uploadStream = bucket.openUploadStream(file.originalname, {
-            contentType: file.mimetype,
-            metadata: { originalName: file.originalname },
-          });
-
-          uploadStream.end(file.buffer);
-
-          uploadStream.on("finish", async () => {
-            try {
-              const meta = await FileMeta.create({
-                filename: uploadStream.filename,
-                originalName: file.originalname,
-                size: file.size,
-                contentType: file.mimetype,
-                gridFsId: uploadStream.id,
-                uploaderIP: req.ip,
-                downloadKey: downloadKey,
-              });
-              resolve(meta);
-            } catch (dbErr) {
-              console.error("Database save error:", dbErr);
-              reject(dbErr);
-            }
-          });
-
-          uploadStream.on("error", (err) => {
-            console.error("GridFS upload error:", err);
-            reject(err);
-          });
+      const saveMeta = (uploadStream, originalName, size, contentType) =>
+        FileMeta.create({
+          filename: uploadStream.filename,
+          originalName,
+          size,
+          contentType,
+          gridFsId: uploadStream.id,
+          uploaderIP: req.ip,
+          downloadKey: downloadKey,
         });
-      });
+
+      const zipped = shouldZip(req.files);
+
+      // Several files or a folder: one zip stored under the one key.
+      // A single plain file is stored as-is.
+      const uploadPromises = zipped
+        ? [
+            (async () => {
+              const name = `AirBeam-${downloadKey}.zip`;
+              const uploadStream = bucket.openUploadStream(name, {
+                contentType: "application/zip",
+                metadata: { originalName: name },
+              });
+              const size = await zipFilesTo(req.files, uploadStream);
+              return saveMeta(uploadStream, name, size, "application/zip");
+            })(),
+          ]
+        : req.files.map((file) => {
+            return new Promise((resolve, reject) => {
+              const uploadStream = bucket.openUploadStream(file.originalname, {
+                contentType: file.mimetype,
+                metadata: { originalName: file.originalname },
+              });
+
+              uploadStream.end(file.buffer);
+
+              uploadStream.on("finish", async () => {
+                try {
+                  resolve(
+                    await saveMeta(
+                      uploadStream,
+                      file.originalname,
+                      file.size,
+                      file.mimetype || "application/octet-stream"
+                    )
+                  );
+                } catch (dbErr) {
+                  console.error("Database save error:", dbErr);
+                  reject(dbErr);
+                }
+              });
+
+              uploadStream.on("error", (err) => {
+                console.error("GridFS upload error:", err);
+                reject(err);
+              });
+            });
+          });
 
       // Await all uploads to finish
       const savedMetas = await Promise.all(uploadPromises);
@@ -95,7 +128,8 @@ router.post(
       res.json({
         message: "Files uploaded successfully",
         downloadKey: downloadKey,
-        filesCount: savedMetas.length,
+        filesCount: req.files.length,
+        zipped,
         metas: savedMetas,
       });
 
